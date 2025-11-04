@@ -1,140 +1,249 @@
 # GitHub Actions Workflows
 
-## Overview
+Эта папка содержит автоматизированные CI/CD workflows для Timeline Studio.
 
-Timeline Studio использует набор оптимизированных CI/CD workflows для автоматизации тестирования, сборки и деплоя. Все workflows настроены для работы с FFmpeg и другими медиа-библиотеками.
+## 🔄 Основной Pipeline
 
-## Активные Workflows
+### 1. Проверка качества кода (`check-all.yml`)
+**Триггеры:** push, pull_request, workflow_call
 
-### Core Workflows
+Выполняет все проверки качества кода:
+- ✅ Lint JavaScript/TypeScript (Biome)
+- ✅ Lint Rust (clippy + rustfmt)
+- ✅ Lint CSS (Stylelint)
+- ✅ Unit тесты (Vitest)
+- ✅ Rust тесты
+- ✅ Проверка сборки
 
-#### `lint-js.yml` - Линтинг JavaScript/TypeScript
-**Назначение**: Проверка кода с помощью Biome
+**Платформы:** Ubuntu 22.04, Windows latest
+**Время выполнения:** ~15-30 минут
+
+### 2. Автоматический релиз (`release.yml`)
+**Триггер:** push to main
+
+Создает новую версию используя semantic-release:
+1. Запускает `check-all.yml` для проверки качества
+2. Анализирует коммиты (conventional commits)
+3. Определяет тип версии (major/minor/patch)
+4. Обновляет версии в файлах
+5. Генерирует CHANGELOG.md
+6. Создает git tag
+7. Автоматически триггерит `build-release.yml`
+
+**Используемые плагины:**
+- @semantic-release/commit-analyzer
+- @semantic-release/release-notes-generator
+- @semantic-release/changelog
+- @semantic-release/npm (npmPublish: false)
+- @semantic-release/git
+- @semantic-release/github
+
+### 3. Сборка и публикация (`build-release.yml`)
+**Триггеры:** push tag v*, workflow_dispatch
+
+Собирает и публикует релизы:
+1. Извлекает версию из тега или manual input
+2. Создает GitHub Release
+3. Собирает бинарники для всех платформ:
+   - 🍎 macOS Universal (Intel + Apple Silicon)
+   - 🪟 Windows x64 (.msi + .exe)
+   - 🐧 Linux (.AppImage + .deb)
+4. Загружает артефакты в релиз
+5. Обновляет promo страницу
+
+**Время выполнения:** ~60-120 минут (параллельная сборка)
+
+## 📋 Дополнительные Workflows
+
+### `build.yml`
+Базовая проверка что проект собирается на Ubuntu.
+
+**Триггер:** push, pull_request
+
+### Линтеры (отдельные workflow)
+
+#### `lint-js.yml`
+**Назначение**: Проверка кода JavaScript/TypeScript с Biome
 **Триггеры**: Push в main, Pull Requests
 **Платформы**: Ubuntu, Windows
-**Ключевые особенности**:
-- Использует Biome вместо ESLint для скорости
-- Кросс-платформенная проверка
-- Кэширование зависимостей
 
-#### `lint-rs.yml` - Линтинг Rust
+#### `lint-rs.yml`
 **Назначение**: Проверка Rust кода с clippy
 **Триггеры**: Push в main, Pull Requests для src-tauri/**
 **Платформы**: Ubuntu, Windows, macOS
-**Ключевые особенности**:
-- Проверка форматирования с rustfmt
-- Clippy с уровнем предупреждений
-- Кэширование Cargo зависимостей
 
-#### `lint-css.yml` - Линтинг CSS
+#### `lint-css.yml`
 **Назначение**: Проверка стилей с Stylelint
 **Триггеры**: Push в main, Pull Requests
 **Платформы**: Ubuntu
-**Ключевые особенности**:
-- Проверка CSS и PostCSS файлов
-- Быстрая валидация
 
-#### `check-all.yml` - Полная проверка
-**Назначение**: Комплексная проверка всего проекта
-**Триггеры**: Push в main/develop, Pull Requests
-**Платформы**: Ubuntu, Windows, macOS  
-**Ключевые особенности**:
-- Запускает все линтеры и тесты
-- Проверка типов TypeScript
-- Тесты фронтенда и бэкенда
+### `version-bump.yml`
+Ручное обновление версии (создает PR).
 
-### Build Workflows
+**Триггер:** workflow_dispatch
 
-#### `build.yml` - Основная сборка
-**Назначение**: Сборка приложения для всех платформ
-**Триггеры**: Push в main, теги версий
-**Платформы**: Ubuntu, Windows, macOS
-**Ключевые особенности**:
-- Сборка Tauri приложения
-- Создание установщиков
-- Загрузка артефактов
+**Опции:**
+- patch (0.0.X)
+- minor (0.X.0)
+- major (X.0.0)
+- custom (любая версия)
 
-#### `build-release.yml` - Release сборка
-**Назначение**: Создание официальных релизов
-**Триггеры**: Теги версий (v*)
-**Платформы**: Ubuntu, Windows, macOS
-**Ключевые особенности**:
-- Подписание кода
-- Создание changelog
-- Публикация в GitHub Releases
-- Нотариация для macOS
+### `alpha-release.yml`
+Создание тестовых альфа-релизов.
 
-#### `macos-build.yml` - Специализированная macOS сборка
-**Назначение**: Сборка и нотариация для macOS
-**Триггеры**: Push в main, manual dispatch
-**Платформы**: macOS (различные версии)
-**Ключевые особенности**:
-- Универсальные бинарники (Intel + Apple Silicon)
-- Нотариация через Apple
-- Code signing
+**Триггеры:**
+- push to branch `alpha-release-*`
+- push tag `v*-alpha`
+- workflow_dispatch
 
-### Testing Workflows
+### Testing & Documentation
 
-#### `test-coverage.yml` - Покрытие тестами
+#### `test-coverage.yml`
 **Назначение**: Генерация отчетов покрытия
 **Триггеры**: Push в main, Pull Requests
-**Платформы**: Ubuntu
 **Ключевые особенности**:
 - Покрытие для JavaScript и Rust
 - Загрузка в Codecov
 - HTML отчеты как артефакты
 
-### Deployment Workflows
-
-#### `deploy-promo.yml` - Деплой промо-сайта
-**Назначение**: Деплой лендинга на GitHub Pages
-**Триггеры**: Push в main (изменения в promo/**)
-**Платформы**: Ubuntu
-**Ключевые особенности**:
-- Сборка React приложения
-- Автоматический деплой
-
-#### `sync-changelog.yml` - Синхронизация CHANGELOG
-**Назначение**: Обновление changelog на сайте
-**Триггеры**: Push в main (CHANGELOG.md)
-**Платформы**: Ubuntu
-
-### Utility Workflows
-
-#### `version-bump.yml` - Обновление версии
-**Назначение**: Автоматическое обновление версии
-**Триггеры**: Manual dispatch
-**Параметры**: major, minor, patch
-**Ключевые особенности**:
-- Обновляет package.json, Cargo.toml, tauri.conf.json
-- Создает commit и тег
-
-#### `bundle-analysis.yml` - Анализ бандла
-**Назначение**: Анализ размера JavaScript бандла
-**Триггеры**: Pull Requests
-**Платформы**: Ubuntu
-**Ключевые особенности**:
-- Сравнение размеров с main веткой
-- Детальный отчет в PR
-
-#### `docs.yml` - Генерация документации
+#### `docs.yml`
 **Назначение**: Создание API документации
 **Триггеры**: Push в main
-**Платформы**: Ubuntu
 **Ключевые особенности**:
 - TypeDoc для TypeScript
 - Cargo doc для Rust
 
-#### `release.yml` - Semantic Release
-**Назначение**: Автоматический релиз через semantic-release
-**Триггеры**: Push в main
-**Платформы**: Ubuntu
-**Ключевые особенности**:
-- Анализ коммитов
-- Автоматическая версионность
-- Генерация changelog
+### Deployment
 
-## Настройка окружения
+#### `deploy-promo.yml`
+**Назначение**: Деплой лендинга на GitHub Pages
+**Триггеры**: Push в main (изменения в promo/**)
+
+#### `sync-changelog.yml`
+**Назначение**: Обновление changelog на сайте
+**Триггеры**: Push в main (CHANGELOG.md)
+
+#### `bundle-analysis.yml`
+**Назначение**: Анализ размера JavaScript бандла
+**Триггеры**: Pull Requests
+
+## 🚀 Как использовать
+
+### Создать релиз автоматически
+
+1. Делайте коммиты используя conventional commits:
+   ```bash
+   git commit -m "feat: Add new feature"
+   git commit -m "fix: Fix bug"
+   git commit -m "docs: Update documentation"
+   ```
+
+2. Push в main:
+   ```bash
+   git push origin main
+   ```
+
+3. Автоматически:
+   - ✅ check-all проверит код
+   - ✅ semantic-release создаст версию и тег
+   - ✅ build-release соберет и опубликует релиз
+
+### Создать релиз вручную
+
+1. Перейдите в Actions → Build and Release
+2. Нажмите "Run workflow"
+3. Укажите версию и тип (release/prerelease)
+4. Нажмите "Run workflow"
+
+### Создать альфа-релиз
+
+```bash
+git checkout -b alpha-release-feature-name
+git push origin alpha-release-feature-name
+```
+
+Или создайте тег:
+```bash
+git tag v2.1.5-alpha
+git push origin v2.1.5-alpha
+```
+
+## 🔧 Локальная проверка
+
+Перед push рекомендуется запустить проверки локально:
+
+```bash
+# Все проверки
+npm run check:all
+
+# Только lint
+npm run lint
+
+# Только тесты
+npm run test
+
+# Проверка Rust
+npm run check:rust
+```
+
+## 📝 Conventional Commits
+
+Используйте следующие префиксы для коммитов:
+
+- `feat:` - новая функциональность (minor version)
+- `fix:` - исправление бага (patch version)
+- `docs:` - изменения в документации
+- `style:` - форматирование кода
+- `refactor:` - рефакторинг
+- `perf:` - улучшение производительности
+- `test:` - добавление тестов
+- `chore:` - обновление зависимостей и т.д.
+
+**Breaking changes** (major version):
+```bash
+git commit -m "feat!: Change API"
+# или
+git commit -m "feat: Change API
+
+BREAKING CHANGE: API has changed"
+```
+
+## 🐛 Troubleshooting
+
+### Релиз не создался автоматически
+
+1. Проверьте что коммит использует conventional commits format
+2. Убедитесь что check-all прошел успешно
+3. Проверьте что нет `[skip ci]` в сообщении коммита
+4. Посмотрите логи release.yml workflow
+
+### Build-release не запустился после тега
+
+1. Убедитесь что тег имеет формат `v*` (например `v2.1.5`)
+2. Проверьте что тег был создан через push (`git push origin v2.1.5`)
+3. Посмотрите в Actions - workflow должен появиться через несколько секунд
+
+### Проверки падают
+
+1. Запустите локально: `npm run check:all`
+2. Исправьте ошибки
+3. Закоммитьте исправления
+4. Push снова
+
+## 🔐 Секреты и переменные
+
+Необходимые секреты в репозитории:
+
+- `APPLE_CERTIFICATE` - Сертификат для подписи macOS
+- `APPLE_CERTIFICATE_PASSWORD` - Пароль сертификата
+- `APPLE_SIGNING_IDENTITY` - Identity для подписи
+- `APPLE_ID` - Apple ID для нотариации
+- `APPLE_PASSWORD` - App-specific пароль
+- `CODECOV_TOKEN` - Токен для Codecov
+- `TAURI_PRIVATE_KEY` - Приватный ключ для обновлений
+- `TAURI_KEY_PASSWORD` - Пароль ключа
+
+## ⚙️ Настройка окружения
 
 ### FFmpeg на Windows
 
@@ -159,20 +268,7 @@ ORT_DYLIB_PATH=/opt/homebrew/lib/libonnxruntime.dylib
 ORT_LIB_PATH=/usr/lib/x86_64-linux-gnu
 ```
 
-## Секреты и переменные
-
-Необходимые секреты в репозитории:
-
-- `APPLE_CERTIFICATE` - Сертификат для подписи macOS
-- `APPLE_CERTIFICATE_PASSWORD` - Пароль сертификата
-- `APPLE_SIGNING_IDENTITY` - Identity для подписи
-- `APPLE_ID` - Apple ID для нотариации
-- `APPLE_PASSWORD` - App-specific пароль
-- `CODECOV_TOKEN` - Токен для Codecov
-- `TAURI_PRIVATE_KEY` - Приватный ключ для обновлений
-- `TAURI_KEY_PASSWORD` - Пароль ключа
-
-## Кэширование
+## 💾 Кэширование
 
 Стратегия кэширования для ускорения сборок:
 
@@ -181,17 +277,18 @@ ORT_LIB_PATH=/usr/lib/x86_64-linux-gnu
 3. **FFmpeg (Windows)**: Отдельный кэш для библиотек
 4. **Bun кэш**: По хэшу bun.lockb
 
-## Метрики производительности
+## 📊 Метрики производительности
 
 | Workflow | Типичное время | Платформа |
 |----------|---------------|-----------|
 | lint-js | 2-3 минуты | Ubuntu/Windows |
 | lint-rs | 5-8 минут | Все платформы |
-| check-all | 10-15 минут | Все платформы |
-| build | 20-30 минут | Все платформы |
+| check-all | 15-30 минут | Ubuntu, Windows |
+| build | 20-30 минут | Ubuntu |
+| build-release | 60-120 минут | Все платформы |
 | test-coverage | 8-12 минут | Ubuntu |
 
-## Отладка проблем
+## 🔧 Отладка проблем
 
 ### Проблема: Mutex lock failed в Rust тестах
 **Решение**: Используется скрипт `src-tauri/run-tests.sh` с single-thread режимом
@@ -202,20 +299,22 @@ ORT_LIB_PATH=/usr/lib/x86_64-linux-gnu
 ### Проблема: Biome форматирование
 **Решение**: Запустите локально `npm run lint:fix`
 
-## Добавление новых зависимостей
+### Проблема: check-all падает с timeout
+**Решение**: Увеличен timeout до 120 минут в workflow конфигурации
 
-При добавлении системных зависимостей:
-
-1. **Linux**: Добавьте в `apt-get install` список
-2. **macOS**: Добавьте в `brew install` список
-3. **Windows**: Добавьте в секцию установки Windows зависимостей
-
-Всегда тестируйте изменения в Pull Request перед мержем в main.
-
-## Связанные скрипты
+## 📚 Связанные скрипты
 
 Вспомогательные скрипты находятся в `scripts/ci/`:
 - `setup-ffmpeg-windows.ps1` - Установка FFmpeg на Windows
 - `setup-ffmpeg-macos.sh` - Установка FFmpeg на macOS
+- `setup-rust-env-windows.ps1` - Настройка Rust окружения на Windows
 - `sync-version.js` - Синхронизация версий
 - `sync-changelog.js` - Синхронизация changelog
+- `version-sync.mjs` - Универсальная синхронизация версий
+
+## 📖 Дополнительная документация
+
+См. также:
+- [CLAUDE.md](../../CLAUDE.md) - Полная документация проекта
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Руководство для контрибьюторов
+- [.releaserc.json](../../.releaserc.json) - Конфигурация semantic-release

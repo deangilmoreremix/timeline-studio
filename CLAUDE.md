@@ -99,24 +99,109 @@ bun run tauri dev
 
 ## CI/CD Configuration
 
-### GitHub Actions Workflows
+### GitHub Actions Workflows Architecture
 
-Проект включает оптимизированные workflow для CI/CD:
+Проект использует автоматизированный CI/CD pipeline с тремя основными этапами:
 
-1. **`.github/workflows/ci.yml`** - Основной CI pipeline
-   - Тестирование фронтенда и бэкенда на всех платформах
-   - Оптимизированная установка FFmpeg на Windows (предсобранные библиотеки)
-   - Кэширование зависимостей для ускорения сборки
+```
+┌─────────────────────────────────────┐
+│  Push/PR → check-all.yml            │
+│  - Lint (JS/TS/Rust/CSS)            │
+│  - Tests (unit + Rust)              │
+│  - Build verification               │
+└─────────────────────────────────────┘
+              ↓ (проверки прошли)
+┌─────────────────────────────────────┐
+│  Push to main → release.yml         │
+│  - Запускает check-all.yml          │
+│  - semantic-release создает версию  │
+│  - Обновляет CHANGELOG.md           │
+│  - Создает git tag (v2.1.5)         │
+└─────────────────────────────────────┘
+              ↓ (tag trigger)
+┌─────────────────────────────────────┐
+│  Tag push → build-release.yml       │
+│  - Автоматически триггерится        │
+│  - Собирает для всех платформ       │
+│  - Создает GitHub Release           │
+│  - Загружает артефакты              │
+│  - Обновляет promo страницу         │
+└─────────────────────────────────────┘
+```
 
-2. **`.github/workflows/quick-check.yml`** - Быстрая валидация
-   - Lint и format проверки
-   - Критически важные тесты
-   - Запускается на каждый push/PR
+### Основные Workflows
 
-3. **`.github/workflows/windows-build.yml`** - Специализированная сборка для Windows
-   - Оптимизированная установка FFmpeg (избегает зависания vcpkg)
-   - Таймауты для предотвращения зависания
-   - Кэширование FFmpeg библиотек
+1. **`.github/workflows/check-all.yml`** - Проверки качества кода
+   - **Запускается:** на каждый push/PR + вызывается из release.yml
+   - **Функции:**
+     - JS/TS lint и форматирование (Biome)
+     - Rust clippy и rustfmt
+     - CSS linting (Stylelint)
+     - Unit тесты (Vitest)
+     - Rust тесты
+     - Проверка сборки
+   - **Платформы:** Ubuntu 22.04, Windows latest (параллельно)
+   - **Время выполнения:** ~15-30 минут
+
+2. **`.github/workflows/release.yml`** - Автоматическое версионирование
+   - **Запускается:** при push в main (если check-all прошел)
+   - **Функции:**
+     - Анализирует коммиты (conventional commits)
+     - Определяет новую версию (major/minor/patch)
+     - Обновляет package.json, Cargo.toml, tauri.conf.json
+     - Генерирует CHANGELOG.md
+     - Создает git tag (v*)
+     - Коммитит изменения с `[skip ci]`
+   - **Результат:** тег автоматически триггерит build-release.yml
+
+3. **`.github/workflows/build-release.yml`** - Сборка и публикация релизов
+   - **Запускается:**
+     - Автоматически при создании тега v*
+     - Вручную через workflow_dispatch
+   - **Функции:**
+     - Извлекает версию из тега или input
+     - Создает/обновляет GitHub Release
+     - Собирает бинарники для всех платформ:
+       - macOS (Universal binary: Intel + Apple Silicon)
+       - Windows (x64, .msi + .exe)
+       - Linux (AppImage + .deb)
+     - Загружает артефакты в релиз
+     - Обновляет описание релиза с ссылками для загрузки
+     - Деплоит обновленную promo страницу
+   - **Время выполнения:** ~60-120 минут (параллельная сборка)
+
+### Дополнительные Workflows
+
+4. **`.github/workflows/build.yml`** - Базовая проверка сборки
+   - Простая проверка что проект собирается
+   - Запускается на push/PR
+   - Только для Ubuntu
+
+5. **`.github/workflows/version-bump.yml`** - Ручное обновление версии
+   - Для случаев когда нужно вручную изменить версию
+   - Создает PR с обновленной версией
+
+6. **`.github/workflows/alpha-release.yml`** - Альфа релизы
+   - Для тестовых сборок
+   - Запускается на ветках `alpha-release-*`
+
+### Типичные Сценарии
+
+**Обычный релиз:**
+1. Разработчик делает коммиты с conventional commits (feat:, fix:, etc.)
+2. Push в main → check-all проверяет код
+3. Если проверки прошли → release.yml создает версию
+4. semantic-release создает тег → автоматически запускается build-release.yml
+5. Бинарники собираются и публикуются в GitHub Releases
+
+**Экстренный релиз:**
+1. Запустить build-release.yml вручную
+2. Указать версию и тип релиза (release/prerelease)
+
+**Проверка перед коммитом:**
+```bash
+npm run check:all  # Локальная проверка всех линтеров и тестов
+```
 
 ### Windows-specific FFmpeg Setup
 

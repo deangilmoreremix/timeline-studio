@@ -1,6 +1,11 @@
 name: Build and Release
 
 on:
+  # Автоматический запуск при создании тега semantic-release
+  push:
+    tags:
+      - 'v*'
+  # Ручной запуск для экстренных случаев
   workflow_dispatch:
     inputs:
       version:
@@ -10,7 +15,7 @@ on:
       prerelease:
         description: 'Is this a pre-release?'
         required: true
-        default: true
+        default: false
         type: boolean
 
 jobs:
@@ -19,18 +24,37 @@ jobs:
     outputs:
       release_id: ${{ fromJSON(steps.create_release.outputs.result).id }}
       upload_url: ${{ fromJSON(steps.create_release.outputs.result).upload_url }}
-      version: ${{ github.event.inputs.version }}
+      version: ${{ steps.get_version.outputs.version }}
+      prerelease: ${{ steps.get_version.outputs.prerelease }}
 
     steps:
+      - name: Get version from tag or input
+        id: get_version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            # Извлекаем версию из тега (v2.1.5 -> 2.1.5)
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "📦 Building release from tag: v$VERSION"
+          else
+            # Используем версию из input при ручном запуске
+            VERSION="${{ github.event.inputs.version }}"
+            PRERELEASE="${{ github.event.inputs.prerelease }}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+            echo "📦 Building release from manual input: v$VERSION (prerelease: $PRERELEASE)"
+          fi
+
       - name: Create or Get Release
         id: create_release
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const tag = `v${{ github.event.inputs.version }}`;
-            const releaseName = `Timeline Studio v${{ github.event.inputs.version }}`;
-            const releaseBody = `Timeline Studio v${{ github.event.inputs.version }}
+            const tag = `v${{ steps.get_version.outputs.version }}`;
+            const releaseName = `Timeline Studio v${{ steps.get_version.outputs.version }}`;
+            const releaseBody = `Timeline Studio v${{ steps.get_version.outputs.version }}
 
             ## Статус сборки
 
@@ -63,7 +87,7 @@ jobs:
                   name: releaseName,
                   body: releaseBody,
                   draft: false,
-                  prerelease: ${{ github.event.inputs.prerelease }}
+                  prerelease: ${{ steps.get_version.outputs.prerelease == 'true' }}
                 });
 
                 return newRelease.data;
@@ -681,7 +705,7 @@ jobs:
           releaseName: "Timeline Studio v${{ needs.create-release.outputs.version }}"
           releaseBody: "See the assets to download this version and install."
           releaseDraft: false
-          prerelease: ${{ github.event.inputs.prerelease }}
+          prerelease: ${{ needs.create-release.outputs.prerelease == 'true' }}
           args: --target universal-apple-darwin --ci
           includeDebug: false
           includeRelease: true
@@ -718,7 +742,7 @@ jobs:
           releaseName: "Timeline Studio v${{ needs.create-release.outputs.version }}"
           releaseBody: "See the assets to download this version and install."
           releaseDraft: false
-          prerelease: ${{ github.event.inputs.prerelease }}
+          prerelease: ${{ needs.create-release.outputs.prerelease == 'true' }}
           includeDebug: false
           includeRelease: true
           includeUpdaterJson: true
@@ -743,7 +767,7 @@ jobs:
           releaseName: "Timeline Studio v${{ needs.create-release.outputs.version }}"
           releaseBody: "See the assets to download this version and install."
           releaseDraft: false
-          prerelease: ${{ github.event.inputs.prerelease }}
+          prerelease: ${{ needs.create-release.outputs.prerelease == 'true' }}
           includeDebug: false
           includeRelease: true
           includeUpdaterJson: true

@@ -1,5 +1,10 @@
 name: Release
 
+# Этот workflow запускается при push в main и выполняет:
+# 1. semantic-release - создает версию, обновляет CHANGELOG, создает тег
+# 2. После создания тега автоматически запустится build-release.yml
+# 3. build-release.yml соберет бинарники и создаст GitHub Release
+
 on:
   push:
     branches:
@@ -11,9 +16,15 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Сначала проверяем что все тесты и линтеры прошли
+  check:
+    name: Run checks before release
+    uses: ./.github/workflows/check-all.yml
+
   release:
-    name: Release
+    name: Create release version
     runs-on: ubuntu-latest
+    needs: check
     steps:
       - name: Checkout
         uses: actions/checkout@v4
