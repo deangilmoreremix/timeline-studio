@@ -1,5 +1,6 @@
 import {
   Brain,
+  Code,
   FilePlus,
   FolderOpen,
   LayoutTemplate,
@@ -44,6 +45,7 @@ const TopBarComponent = function TopBar() {
   const { isBrowserVisible, toggleBrowserVisibility } = useUserSettings()
   const { isTimelineVisible, toggleTimelineVisibility } = useUserSettings()
   const { isOptionsVisible, toggleOptionsVisibility } = useUserSettings()
+  const { isRendivVisible, toggleRendivVisibility } = useUserSettings()
   const { currentProject, openProject, saveProject, setProjectDirty, createNewProject } = useCurrentProject()
   const { createProject: createTimelineProject } = useTimeline()
   const { clearBrowserState } = useBrowserState()
@@ -235,6 +237,16 @@ const TopBarComponent = function TopBar() {
             title={buttonTitles.layout}
           >
             {isOptionsVisible ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className={TOP_BAR_BUTTON_CLASS}
+            onClick={toggleRendivVisibility}
+            title={isRendivVisible ? "Hide Rendiv Editor" : "Show Rendiv Editor"}
+          >
+            <Code size={16} className={isRendivVisible ? "text-blue-500" : ""} />
           </Button>
 
           <Popover>

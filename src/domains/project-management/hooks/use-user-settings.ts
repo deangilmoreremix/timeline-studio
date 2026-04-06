@@ -110,6 +110,10 @@ export function useUserSettings() {
     orchestrator.updateUserSettings({ isOptionsVisible: !settings.isOptionsVisible })
   }, [orchestrator, settings.isOptionsVisible])
 
+  const toggleRendivVisibility = useCallback(() => {
+    orchestrator.updateUserSettings({ isRendivVisible: !settings.isRendivVisible })
+  }, [orchestrator, settings.isRendivVisible])
+
   const toggleAIAssistantVisibility = useCallback(() => {
     orchestrator.updateUserSettings({ isAIAssistantVisible: !settings.isAIAssistantVisible })
   }, [orchestrator, settings.isAIAssistantVisible])
@@ -143,6 +147,7 @@ export function useUserSettings() {
     toggleBrowserVisibility,
     toggleTimelineVisibility,
     toggleOptionsVisibility,
+    toggleRendivVisibility,
     toggleAIAssistantVisibility,
 
     // Удобные геттеры

@@ -113,6 +113,7 @@ export interface UserSettingsContextType {
   isBrowserVisible: boolean // Флаг видимости браузера
   isTimelineVisible: boolean // Флаг видимости временной шкалы
   isOptionsVisible: boolean // Флаг видимости опций
+  isRendivVisible: boolean // Флаг видимости Rendiv редактора
   isAIAssistantVisible: boolean // Флаг видимости AI помощника
   isLoaded: boolean // Флаг загрузки настроек
   browserSettings?: BrowserContext // Настройки состояния браузера (опционально)
@@ -214,6 +215,7 @@ const initialContext: UserSettingsContextType = {
   isBrowserVisible: true, // Браузер виден по умолчанию
   isTimelineVisible: true, // Временная шкала видна по умолчанию
   isOptionsVisible: true, // Опции видны по умолчанию
+  isRendivVisible: false, // Rendiv редактор скрыт по умолчанию
   isAIAssistantVisible: false, // AI помощник скрыт по умолчанию
   isLoaded: false, // Флаг загрузки настроек (изначально false)
 }
@@ -1002,6 +1004,17 @@ export const userSettingsMachine = createMachine(
         return {
           ...context,
           isOptionsVisible: !context.isOptionsVisible,
+        }
+      }),
+
+      /**
+       * Действие для переключения видимости Rendiv редактора
+       */
+      toggleRendivVisibility: assign(({ context }) => {
+        logger.debug("Toggling Rendiv visibility:", { data: !context.isRendivVisible })
+        return {
+          ...context,
+          isRendivVisible: !context.isRendivVisible,
         }
       }),
 
