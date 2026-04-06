@@ -7,6 +7,9 @@
 
 import React, { useEffect, useState } from "react"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAdvancedTimeline } from "../hooks/use-advanced-timeline"
 import { AdvancedVirtualizedTimelineContent } from "./advanced-virtualized-timeline"
 
@@ -175,120 +178,71 @@ export function AdvancedTimelineStudio() {
       style={{ width: "100%", height: "100vh", display: "flex", flexDirection: "column" }}
     >
       {/* Toolbar with advanced controls */}
-      <div
-        className="timeline-toolbar"
-        style={{ padding: "10px", borderBottom: "1px solid #374151", background: "#1f2937" }}
-      >
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+      <div className="timeline-toolbar p-2.5 border-b border-border bg-muted/50">
+        <div className="flex gap-2.5 items-center">
           {/* Edit mode selector */}
-          <select
-            value={editMode}
-            onChange={(e) => setEditMode(e.target.value as any)}
-            style={{
-              padding: "5px",
-              background: "#374151",
-              color: "white",
-              border: "1px solid #4b5563",
-              borderRadius: "4px",
-            }}
-          >
-            <option value="select">Select</option>
-            <option value="trim">Precision Trim</option>
-            <option value="speed">Speed Ramping</option>
-            <option value="color">Color Grading</option>
-          </select>
+          <Select value={editMode} onValueChange={(value) => setEditMode(value as any)}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select mode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="select">Select</SelectItem>
+              <SelectItem value="trim">Precision Trim</SelectItem>
+              <SelectItem value="speed">Speed Ramping</SelectItem>
+              <SelectItem value="color">Color Grading</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Advanced feature buttons */}
-          <button
-            onClick={handleApplySpeedRamping}
-            disabled={!selectedClipId}
-            style={{
-              padding: "5px 10px",
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: selectedClipId ? "pointer" : "not-allowed",
-            }}
-          >
+          <Button onClick={handleApplySpeedRamping} disabled={!selectedClipId} variant="default" size="sm">
             Apply Speed Ramp
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleApplyColorGrading}
             disabled={!selectedClipId}
-            style={{
-              padding: "5px 10px",
-              background: "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: selectedClipId ? "pointer" : "not-allowed",
-            }}
+            variant="default"
+            size="sm"
+            className="bg-green-600 hover:bg-green-700"
           >
             Apply Color Grade
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handlePrecisionTrim}
             disabled={!selectedClipId}
-            style={{
-              padding: "5px 10px",
-              background: "#f59e0b",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: selectedClipId ? "pointer" : "not-allowed",
-            }}
+            variant="default"
+            size="sm"
+            className="bg-amber-600 hover:bg-amber-700"
           >
             Precision Trim
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleConfigureSnapping}
-            style={{
-              padding: "5px 10px",
-              background: "#8b5cf6",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            variant="default"
+            size="sm"
+            className="bg-purple-600 hover:bg-purple-700"
           >
             Configure Snapping
-          </button>
+          </Button>
 
-          <button
-            onClick={handleUpdateVirtualWindow}
-            style={{
-              padding: "5px 10px",
-              background: "#ef4444",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+          <Button onClick={handleUpdateVirtualWindow} variant="destructive" size="sm">
             Update Viewport
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handlePreloadTimeRange}
-            style={{
-              padding: "5px 10px",
-              background: "#06b6d4",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            variant="default"
+            size="sm"
+            className="bg-cyan-600 hover:bg-cyan-700"
           >
             Preload Range
-          </button>
+          </Button>
         </div>
 
         {/* Status indicators */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: "15px", fontSize: "12px", color: "#9ca3af" }}>
+        <div className="ml-auto flex gap-4 text-xs text-muted-foreground">
           <span>Clips: {timeline.clips?.length || 0}</span>
           <span>Visible: {visibleClips?.length || 0}</span>
           <span>
@@ -299,7 +253,7 @@ export function AdvancedTimelineStudio() {
       </div>
 
       {/* Main timeline area */}
-      <div style={{ flex: 1, position: "relative" }}>
+      <div className="flex-1 relative">
         <AdvancedVirtualizedTimelineContent />
 
         {/* Performance overlay */}
@@ -329,35 +283,61 @@ export function AdvancedTimelineStudio() {
 
       {/* Clip inspector panel */}
       {selectedClipId && (
-        <div
-          className="clip-inspector"
-          style={{
-            height: "200px",
-            borderTop: "1px solid #374151",
-            background: "#1f2937",
-            padding: "10px",
-            overflowY: "auto",
-          }}
-        >
+        <div className="clip-inspector h-48 border-t border-border bg-muted/30 p-2.5 overflow-y-auto">
           <h3 style={{ color: "white", marginBottom: "10px" }}>Clip Inspector: {selectedClipId}</h3>
 
           {/* Speed ramping controls */}
-          <div style={{ marginBottom: "15px" }}>
-            <h4 style={{ color: "#9ca3af", marginBottom: "5px" }}>Speed Ramping</h4>
-            <button
-              onClick={handleApplySpeedRamping}
-              style={{
-                padding: "4px 8px",
-                background: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "3px",
-                fontSize: "12px",
-                cursor: "pointer",
-              }}
-            >
+          <div className="mb-4">
+            <h4 className="text-muted-foreground mb-1.5 text-sm font-medium">Speed Ramping</h4>
+            <Button onClick={handleApplySpeedRamping} variant="default" size="sm" className="text-xs">
               Apply Hero Ramp
-            </button>
+            </Button>
+          </div>
+
+          {/* Color grading controls */}
+          <div className="mb-4">
+            <h4 className="text-muted-foreground mb-1.5 text-sm font-medium">Color Grading</h4>
+            <div className="flex gap-1.5">
+              <Button
+                onClick={handleApplyColorGrading}
+                variant="default"
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 text-xs"
+              >
+                Cinematic
+              </Button>
+              <Button
+                onClick={() => timeline.resetColorGrading(selectedClipId)}
+                variant="secondary"
+                size="sm"
+                className="text-xs"
+              >
+                Reset
+              </Button>
+            </div>
+          </div>
+
+          {/* Precision trimming controls */}
+          <div className="mb-4">
+            <h4 className="text-muted-foreground mb-1.5 text-sm font-medium">Precision Trimming</h4>
+            <div className="flex gap-1.5">
+              <Button
+                onClick={() => setEditMode("trim")}
+                variant="default"
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-xs"
+              >
+                Ripple Trim
+              </Button>
+              <Button
+                onClick={() => setEditMode("trim")}
+                variant="default"
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700 text-xs"
+              >
+                Roll Trim
+              </Button>
+            </div>
           </div>
 
           {/* Color grading controls */}
