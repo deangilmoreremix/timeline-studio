@@ -109,6 +109,16 @@ export interface ProjectSettings {
   resolution: Resolution
   frameRate: FrameRate
   colorSpace: ColorSpace
+
+  /** Advanced timeline features (optional) */
+  advancedTimeline?: {
+    enableSpeedRamping: boolean
+    enableColorGrading: boolean
+    enableMagneticSnapping: boolean
+    enablePrecisionTrimming: boolean
+    enableVirtualizedRendering: boolean
+    enableProgressiveLoading: boolean
+  }
 }
 
 export const DEFAULT_PROJECT_SETTINGS: ProjectSettings = {
@@ -125,6 +135,14 @@ export const DEFAULT_PROJECT_SETTINGS: ProjectSettings = {
   resolution: "1920x1080",
   frameRate: "30",
   colorSpace: "sdr",
+  advancedTimeline: {
+    enableSpeedRamping: true,
+    enableColorGrading: true,
+    enableMagneticSnapping: true,
+    enablePrecisionTrimming: true,
+    enableVirtualizedRendering: true,
+    enableProgressiveLoading: true,
+  },
 }
 
 /**

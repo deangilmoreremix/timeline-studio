@@ -4,6 +4,8 @@
  * Экспорт всех хуков для работы с Timeline
  */
 
+// Advanced timeline hooks
+export { useAdvancedTimeline } from "./use-advanced-timeline"
 export type { UseBatchOperationsReturn } from "./use-batch-operations"
 export { useBatchOperations } from "./use-batch-operations"
 export type { UseClipEffectsOptions, UseClipEffectsReturn } from "./use-clip-effects"

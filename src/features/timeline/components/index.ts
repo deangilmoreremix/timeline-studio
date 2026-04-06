@@ -1,3 +1,7 @@
+export * from "./advanced-timeline-error-boundary"
+export * from "./advanced-timeline-integration"
+// Advanced components
+export * from "./advanced-virtualized-timeline"
 export * from "./audio-effects-editor"
 export * from "./audio-effects-editor-modal"
 export * from "./audio-mixer-view"

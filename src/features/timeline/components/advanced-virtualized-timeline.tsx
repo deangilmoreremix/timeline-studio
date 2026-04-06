@@ -15,10 +15,11 @@ import { createLogger } from "@/lib/tauri-logger"
 import { magneticTimelineInteraction } from "../hooks/use-magnetic-timeline"
 import { progressiveTimelineLoader } from "../services/progressive-loader"
 import { virtualizedTimelineRenderer } from "../services/virtualized-renderer"
+import { AdvancedTimelineErrorBoundary } from "./advanced-timeline-error-boundary"
 
 const logger = createLogger("AdvancedVirtualizedTimelineContent")
 
-export function AdvancedVirtualizedTimelineContent() {
+function AdvancedVirtualizedTimelineContentInner() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [virtualWindow, setVirtualWindow] = useState({
     scrollX: 0,
@@ -217,5 +218,16 @@ export function AdvancedVirtualizedTimelineContent() {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Production-ready advanced virtualized timeline with error boundary
+ */
+export function AdvancedVirtualizedTimelineContent() {
+  return (
+    <AdvancedTimelineErrorBoundary>
+      <AdvancedVirtualizedTimelineContentInner />
+    </AdvancedTimelineErrorBoundary>
   )
 }
