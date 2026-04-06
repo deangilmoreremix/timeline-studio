@@ -5,6 +5,7 @@
  * Hybrid local/API architecture for maximum performance
  */
 
+import { invoke } from "@tauri-apps/api/core"
 import { createLogger } from "@/lib/logger"
 
 const logger = createLogger("LTXDesktopCUDA")
@@ -47,24 +48,18 @@ export class LTXDesktopCUDAEngine {
   private performanceHistory: LTXPerformanceMetrics[] = []
 
   /**
-   * Initialize CUDA environment
+   * Initialize CUDA environment via Tauri backend
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) return
 
     try {
-      // Detect CUDA devices
-      this.devices = await this.detectCUDADevices()
+      // Get CUDA devices from Tauri backend
+      this.devices = await invoke<CudaDeviceInfo[]>("initialize_ltx_cuda")
 
       if (this.devices.length === 0) {
         throw new Error("No CUDA devices detected")
       }
-
-      // Initialize CUDA context
-      await this.initializeCUDAContext()
-
-      // Warm up models
-      await this.warmUpModels()
 
       this.isInitialized = true
       logger.info(`LTX CUDA initialized with ${this.devices.length} device(s)`)
@@ -75,7 +70,7 @@ export class LTXDesktopCUDAEngine {
   }
 
   /**
-   * Generate video with CUDA acceleration
+   * Generate video with CUDA acceleration via Tauri backend
    */
   async generateWithCUDA(config: LTXGenerationConfig): Promise<{
     outputPath: string
@@ -86,26 +81,41 @@ export class LTXDesktopCUDAEngine {
       await this.initialize()
     }
 
-    const startTime = Date.now()
-
     try {
-      // Select optimal device
-      const device = this.selectOptimalDevice(config)
+      // Call Tauri backend for CUDA generation
+      const result = await invoke<LtxGenerationResult>("generate_video_ltx_cuda", {
+        model: config.model,
+        prompt: config.prompt,
+        durationSeconds: config.duration,
+        resolution: config.resolution,
+        quality: config.quality,
+        useCuda: config.useCUDA,
+        vramThresholdGb: config.vramThreshold,
+        batchSize: config.batchSize,
+        enableTiling: config.enableTiling,
+        hybridMode: config.hybridMode,
+      })
 
-      // Prepare generation pipeline
-      const pipeline = await this.prepareGenerationPipeline(config, device)
+      if (!result.success) {
+        throw new Error(result.errorMessage || "Generation failed")
+      }
 
-      // Execute generation
-      const result = await this.executeGeneration(pipeline, config)
-
-      // Collect performance metrics
-      const metrics = await this.collectPerformanceMetrics(startTime, device)
-
+      const metrics = result.metrics!
       this.performanceHistory.push(metrics)
 
-      logger.info(`LTX CUDA generation completed in ${metrics.generationTime}ms`)
+      logger.info(`LTX CUDA generation completed in ${metrics.generationTimeMs}ms`)
 
-      return result
+      return {
+        outputPath: result.outputPath!,
+        metrics: {
+          generationTime: metrics.generationTimeMs,
+          vramUsed: metrics.vramUsedGb,
+          gpuUtilization: metrics.gpuUtilization,
+          throughput: metrics.throughputFps,
+          quality: metrics.qualityScore,
+        },
+        metadata: result.metadata,
+      }
     } catch (error) {
       logger.error("LTX CUDA generation failed:", error)
 
@@ -148,7 +158,7 @@ export class LTXDesktopCUDAEngine {
   }
 
   /**
-   * Apply video retake/edit with CUDA acceleration
+   * Apply video retake/edit with CUDA acceleration via Tauri backend
    */
   async applyVideoRetake(
     originalVideo: string,
@@ -156,48 +166,71 @@ export class LTXDesktopCUDAEngine {
     regions?: Array<{ x: number; y: number; width: number; height: number }>,
   ): Promise<string> {
     try {
-      // Load original video
-      const videoData = await this.loadVideoForEditing(originalVideo)
+      // Call Tauri backend for video retake
+      const result = await invoke<LtxGenerationResult>("apply_video_retake_ltx", {
+        originalVideoPath: originalVideo,
+        retakeInstructions,
+        regions: regions?.map((r) => ({
+          x: r.x,
+          y: r.y,
+          width: r.width,
+          height: r.height,
+        })),
+      })
 
-      // Apply inpainting/masking for specified regions
-      if (regions) {
-        await this.applyRegionMasking(videoData, regions)
+      if (!result.success) {
+        throw new Error(result.errorMessage || "Video retake failed")
       }
 
-      // Generate retake content
-      const retakeConfig: LTXGenerationConfig = {
-        model: "ltx-video-retake",
-        prompt: retakeInstructions,
-        duration: videoData.duration,
-        resolution: videoData.resolution,
-        quality: "high",
-        useCUDA: true,
-        vramThreshold: 16,
-        batchSize: 4,
-        enableTiling: false,
-        hybridMode: true,
-      }
-
-      const result = await this.generateWithCUDA(retakeConfig)
-
-      // Composite retake with original
-      const finalVideo = await this.compositeVideos(originalVideo, result.outputPath, regions)
-
-      return finalVideo
+      logger.info(`Video retake completed: ${result.outputPath}`)
+      return result.outputPath!
     } catch (error) {
       logger.error("Video retake failed:", error)
       throw error
     }
   }
 
+  // Generate retake content
+  const
+  retakeConfig: LTXGenerationConfig = {
+    model: "ltx-video-retake",
+    prompt: retakeInstructions,
+    duration: videoData.duration,
+    resolution: videoData.resolution,
+    quality: "high",
+    useCUDA: true,
+    vramThreshold: 16,
+    batchSize: 4,
+    enableTiling: false,
+    hybridMode: true,
+  }
+
+  const
+  result = await this.generateWithCUDA(retakeConfig)
+
+  // Composite retake with original
+  const
+  finalVideo = await this.compositeVideos(originalVideo, result.outputPath, regions)
+
+  return
+  finalVideo
+}
+catch (error)
+{
+  logger.error("Video retake failed:", error)
+  throw error
+}
+}
+
   /**
    * Optimize generation for available hardware
    */
-  optimizeForHardware(config: Partial<LTXGenerationConfig>): LTXGenerationConfig {
-    const totalVRAM = this.devices.reduce((sum, device) => sum + device.vram, 0)
-    const recommendedVRAM = this.getRecommendedVRAMForConfig(config)
+  optimizeForHardware(config: Partial<LTXGenerationConfig>): LTXGenerationConfig
+{
+  const totalVRAM = this.devices.reduce((sum, device) => sum + device.vram, 0)
+  const recommendedVRAM = this.getRecommendedVRAMForConfig(config)
 
-    return {
+  return {
       model: config.model || "ltx-2.3",
       prompt: config.prompt || "",
       duration: config.duration || 5,
@@ -210,81 +243,104 @@ export class LTXDesktopCUDAEngine {
       hybridMode: config.hybridMode ?? totalVRAM < 16,
       ...config,
     }
+}
+
+// Private methods
+
+private
+async
+detectCUDADevices()
+: Promise<CUDADevice[]>
+{
+  // In real implementation, this would query CUDA runtime
+  // For demo, return mock devices
+
+  const mockDevices: CUDADevice[] = [
+    {
+      id: "cuda:0",
+      name: "NVIDIA RTX 4090",
+      vram: 24,
+      computeCapability: "8.9",
+      temperature: 65,
+      utilization: 0,
+      memoryUsed: 0,
+      memoryTotal: 24 * 1024 * 1024 * 1024, // 24GB in bytes
+    },
+    {
+      id: "cuda:1",
+      name: "NVIDIA RTX 4090",
+      vram: 24,
+      computeCapability: "8.9",
+      temperature: 62,
+      utilization: 0,
+      memoryUsed: 0,
+      memoryTotal: 24 * 1024 * 1024 * 1024,
+    },
+  ]
+
+  // Simulate device detection delay
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  return mockDevices
+}
+
+private
+async
+initializeCUDAContext()
+: Promise<void>
+{
+  // Initialize CUDA context, load drivers, etc.
+  await new Promise((resolve) => setTimeout(resolve, 500))
+}
+
+private
+async
+warmUpModels()
+: Promise<void>
+{
+  // Load and warm up models in GPU memory
+  await new Promise((resolve) => setTimeout(resolve, 2000))
+}
+
+private
+selectOptimalDevice(config: LTXGenerationConfig)
+: CUDADevice
+{
+  // Select device with most available VRAM that meets requirements
+  const suitableDevices = this.devices.filter((d) => d.vram >= config.vramThreshold)
+
+  if (suitableDevices.length === 0) {
+    throw new Error(`No CUDA device meets VRAM requirement: ${config.vramThreshold}GB`)
   }
 
-  // Private methods
+  // Choose device with lowest utilization
+  return suitableDevices.reduce((best, current) => (current.utilization < best.utilization ? current : best))
+}
 
-  private async detectCUDADevices(): Promise<CUDADevice[]> {
-    // In real implementation, this would query CUDA runtime
-    // For demo, return mock devices
-
-    const mockDevices: CUDADevice[] = [
-      {
-        id: "cuda:0",
-        name: "NVIDIA RTX 4090",
-        vram: 24,
-        computeCapability: "8.9",
-        temperature: 65,
-        utilization: 0,
-        memoryUsed: 0,
-        memoryTotal: 24 * 1024 * 1024 * 1024, // 24GB in bytes
-      },
-      {
-        id: "cuda:1",
-        name: "NVIDIA RTX 4090",
-        vram: 24,
-        computeCapability: "8.9",
-        temperature: 62,
-        utilization: 0,
-        memoryUsed: 0,
-        memoryTotal: 24 * 1024 * 1024 * 1024,
-      },
-    ]
-
-    // Simulate device detection delay
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    return mockDevices
-  }
-
-  private async initializeCUDAContext(): Promise<void> {
-    // Initialize CUDA context, load drivers, etc.
-    await new Promise((resolve) => setTimeout(resolve, 500))
-  }
-
-  private async warmUpModels(): Promise<void> {
-    // Load and warm up models in GPU memory
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-  }
-
-  private selectOptimalDevice(config: LTXGenerationConfig): CUDADevice {
-    // Select device with most available VRAM that meets requirements
-    const suitableDevices = this.devices.filter((d) => d.vram >= config.vramThreshold)
-
-    if (suitableDevices.length === 0) {
-      throw new Error(`No CUDA device meets VRAM requirement: ${config.vramThreshold}GB`)
-    }
-
-    // Choose device with lowest utilization
-    return suitableDevices.reduce((best, current) => (current.utilization < best.utilization ? current : best))
-  }
-
-  private async prepareGenerationPipeline(config: LTXGenerationConfig, device: CUDADevice): Promise<any> {
-    // Prepare model pipeline, allocate memory, etc.
-    return {
+private
+async
+prepareGenerationPipeline(config: LTXGenerationConfig, device: CUDADevice)
+: Promise<any>
+{
+  // Prepare model pipeline, allocate memory, etc.
+  return {
       device,
       config,
       pipelineId: crypto.randomUUID(),
     }
-  }
+}
 
-  private async executeGeneration(pipeline: any, config: LTXGenerationConfig): Promise<any> {
-    // Simulate generation with realistic timing
-    const generationTime = config.duration * 1000 * (config.quality === "ultra" ? 3 : config.quality === "high" ? 2 : 1)
+private
+async
+executeGeneration(pipeline: any, config: LTXGenerationConfig)
+: Promise<any>
+{
+  // Simulate generation with realistic timing
+  const generationTime = config.duration * 1000 * (config.quality === "ultra" ? 3 : config.quality === "high" ? 2 : 1)
 
-    await new Promise((resolve) => setTimeout(resolve, generationTime))
+  await new Promise((resolve) => setTimeout(resolve, generationTime))
 
-    return {
+  return {
       outputPath: `/generated/ltx_${Date.now()}.${config.resolution}.mp4`,
       metadata: {
         model: config.model,
@@ -293,24 +349,32 @@ export class LTXDesktopCUDAEngine {
         quality: config.quality,
       },
     }
-  }
+}
 
-  private async collectPerformanceMetrics(startTime: number, device: CUDADevice): Promise<LTXPerformanceMetrics> {
-    const generationTime = Date.now() - startTime
+private
+async
+collectPerformanceMetrics(startTime: number, device: CUDADevice)
+: Promise<LTXPerformanceMetrics>
+{
+  const generationTime = Date.now() - startTime
 
-    return {
+  return {
       generationTime,
       vramUsed: device.vram * 0.8, // Estimate
       gpuUtilization: 85, // Estimate
       throughput: 30, // FPS
       quality: 0.92, // Perceptual quality score
     }
-  }
+}
 
-  private async fallbackToAPI(config: LTXGenerationConfig): Promise<any> {
-    // Fallback to cloud API generation
-    // This would use the repository integration engine
-    return {
+private
+async
+fallbackToAPI(config: LTXGenerationConfig)
+: Promise<any>
+{
+  // Fallback to cloud API generation
+  // This would use the repository integration engine
+  return {
       outputPath: `/api_fallback/ltx_${Date.now()}.${config.resolution}.mp4`,
       metrics: {
         generationTime: 30000, // 30 seconds
@@ -321,119 +385,163 @@ export class LTXDesktopCUDAEngine {
       },
       metadata: { fallback: true },
     }
-  }
+}
 
-  private async generateBatch(prompts: string[], resolution: string, quality: string): Promise<string[]> {
-    // Batch generation for efficiency
-    const results: string[] = []
+private
+async
+generateBatch(prompts: string[], resolution: string, quality: string)
+: Promise<string[]>
+{
+  // Batch generation for efficiency
+  const results: string[] = []
 
-    for (const prompt of prompts) {
-      const config: LTXGenerationConfig = {
-        model: "ltx-image",
-        prompt,
-        duration: 1, // Single frame
-        resolution,
-        quality: quality as any,
-        useCUDA: true,
-        vramThreshold: 8,
-        batchSize: 1,
-        enableTiling: false,
-        hybridMode: false,
-      }
-
-      const result = await this.generateWithCUDA(config)
-      results.push(result.outputPath)
+  for (const prompt of prompts) {
+    const config: LTXGenerationConfig = {
+      model: "ltx-image",
+      prompt,
+      duration: 1, // Single frame
+      resolution,
+      quality: quality as any,
+      useCUDA: true,
+      vramThreshold: 8,
+      batchSize: 1,
+      enableTiling: false,
+      hybridMode: false,
     }
 
-    return results
+    const result = await this.generateWithCUDA(config)
+    results.push(result.outputPath)
   }
 
-  private getOptimalBatchSize(): number {
-    const totalVRAM = this.devices.reduce((sum, d) => sum + d.vram, 0)
-    return totalVRAM >= 32 ? 8 : totalVRAM >= 24 ? 6 : totalVRAM >= 16 ? 4 : 2
+  return results
+}
+
+private
+getOptimalBatchSize()
+: number
+{
+  const totalVRAM = this.devices.reduce((sum, d) => sum + d.vram, 0)
+  return totalVRAM >= 32 ? 8 : totalVRAM >= 24 ? 6 : totalVRAM >= 16 ? 4 : 2
+}
+
+private
+calculateOptimalBatchSize(totalVRAM: number)
+: number
+{
+  return totalVRAM >= 32 ? 8 : totalVRAM >= 24 ? 6 : totalVRAM >= 16 ? 4 : 2
+}
+
+private
+getRecommendedVRAMForConfig(config: Partial<LTXGenerationConfig>)
+: number
+{
+  let baseVRAM = 8 // Base requirement
+
+  // Adjust for quality
+  switch (config.quality) {
+    case "ultra":
+      baseVRAM *= 2
+      break
+    case "high":
+      baseVRAM *= 1.5
+      break
+    case "standard":
+      baseVRAM *= 1
+      break
+    case "fast":
+      baseVRAM *= 0.8
+      break
   }
 
-  private calculateOptimalBatchSize(totalVRAM: number): number {
-    return totalVRAM >= 32 ? 8 : totalVRAM >= 24 ? 6 : totalVRAM >= 16 ? 4 : 2
-  }
+  // Adjust for resolution
+  if (config.resolution === "4K") baseVRAM *= 1.5
+  else if (config.resolution === "8K") baseVRAM *= 3
 
-  private getRecommendedVRAMForConfig(config: Partial<LTXGenerationConfig>): number {
-    let baseVRAM = 8 // Base requirement
+  // Adjust for duration
+  if (config.duration && config.duration > 10) baseVRAM *= 1.2
 
-    // Adjust for quality
-    switch (config.quality) {
-      case "ultra":
-        baseVRAM *= 2
-        break
-      case "high":
-        baseVRAM *= 1.5
-        break
-      case "standard":
-        baseVRAM *= 1
-        break
-      case "fast":
-        baseVRAM *= 0.8
-        break
-    }
+  return Math.ceil(baseVRAM)
+}
 
-    // Adjust for resolution
-    if (config.resolution === "4K") baseVRAM *= 1.5
-    else if (config.resolution === "8K") baseVRAM *= 3
-
-    // Adjust for duration
-    if (config.duration && config.duration > 10) baseVRAM *= 1.2
-
-    return Math.ceil(baseVRAM)
-  }
-
-  private async loadVideoForEditing(videoPath: string): Promise<any> {
-    // Load video data for editing
-    return {
+private
+async
+loadVideoForEditing(videoPath: string)
+: Promise<any>
+{
+  // Load video data for editing
+  return {
       path: videoPath,
       duration: 10,
       resolution: "1080p",
       frames: [],
     }
-  }
+}
 
-  private async applyRegionMasking(
+private
+async
+applyRegionMasking(
     videoData: any,
-    regions: Array<{ x: number; y: number; width: number; height: number }>,
-  ): Promise<void> {
-    // Apply masking to specified regions
-    await new Promise((resolve) => setTimeout(resolve, 500))
-  }
+    regions: Array<{ x: number;
+y: number
+width: number
+height: number
+}>,
+  ): Promise<void>
+{
+  // Apply masking to specified regions
+  await new Promise((resolve) => setTimeout(resolve, 500))
+}
 
-  private async compositeVideos(
+private
+async
+compositeVideos(
     originalVideo: string,
     retakeVideo: string,
     regions?: Array<{ x: number; y: number; width: number; height: number }>,
-  ): Promise<string> {
-    // Composite videos with masking
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    return `/composited/retake_${Date.now()}.mp4`
-  }
+  )
+: Promise<string>
+{
+  // Composite videos with masking
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+  return `/composited/retake_${Date.now()}.mp4`
+}
 
-  // Public API methods
+// Public API methods
 
-  getDevices(): CUDADevice[] {
-    return [...this.devices]
-  }
+getDevices()
+: CUDADevice[]
+{
+  return [...this.devices]
+}
 
-  getPerformanceHistory(): LTXPerformanceMetrics[] {
+async
+getPerformanceHistory()
+: Promise<LTXPerformanceMetrics[]>
+{
+  try {
+    const history = await invoke<LtxPerformanceMetrics[]>("get_ltx_performance_history")
+    return [...this.performanceHistory, ...history]
+  } catch (error) {
+    logger.error("Failed to get performance history:", error)
     return [...this.performanceHistory]
   }
+}
 
-  isInitialized(): boolean {
-    return this.isInitialized
-  }
+isInitialized()
+: boolean
+{
+  return this.isInitialized
+}
 
-  async cleanup(): Promise<void> {
-    // Clean up CUDA resources
-    this.devices = []
-    this.isInitialized = false
-    logger.info("LTX CUDA resources cleaned up")
-  }
+async
+cleanup()
+: Promise<void>
+{
+  // Clean up CUDA resources
+  this.devices = []
+  this.isInitialized = false
+  logger.info("LTX CUDA resources cleaned up")
+}
 }
 
 // Singleton instance

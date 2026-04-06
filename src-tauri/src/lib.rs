@@ -46,6 +46,10 @@ mod proxy_generator;
 pub mod recognition;
 use recognition::commands::yolo_commands::YoloProcessorState;
 
+// AI Commands module (LTX, CineGen, Spaces, Rendiv)
+mod ai_commands;
+mod ai_commands_impl;
+
 // MCP (Model Context Protocol) интеграция
 pub mod mcp;
 use mcp::commands::MCPServerState;

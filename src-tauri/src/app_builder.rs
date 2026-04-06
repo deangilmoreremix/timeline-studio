@@ -544,6 +544,17 @@ pub fn build_app<R: Runtime>() -> Builder<R> {
     crate::mcp::commands::mcp_chat,
     crate::mcp::commands::mcp_execute_tool,
     crate::mcp::commands::mcp_check_api,
+    // AI Commands - LTX CUDA, CineGen, Spaces, Rendiv
+    crate::ai_commands_impl::initialize_ltx_cuda,
+    crate::ai_commands_impl::generate_video_ltx_cuda,
+    crate::ai_commands_impl::get_ltx_performance_history,
+    crate::ai_commands_impl::apply_video_retake_ltx,
+    crate::ai_commands_impl::create_cinegen_element,
+    crate::ai_commands_impl::extract_elements_from_content,
+    crate::ai_commands_impl::execute_spaces_workflow,
+    crate::ai_commands_impl::create_rendiv_component,
+    crate::ai_commands_impl::queue_rendiv_render,
+    crate::ai_commands_impl::get_rendiv_render_status,
   ])
 }
 

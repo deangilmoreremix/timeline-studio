@@ -30,6 +30,20 @@ export function AdvancedTimelineStudio() {
   const [editMode, setEditMode] = useState<"select" | "trim" | "speed" | "color">("select")
   const [activeView, setActiveView] = useState<"timeline" | "spaces" | "elements" | "render">("timeline")
   const [showSpaces, setShowSpaces] = useState(false)
+  const [performanceHistoryLength, setPerformanceHistoryLength] = useState(0)
+
+  // Load performance history on mount
+  useEffect(() => {
+    const loadPerformanceHistory = async () => {
+      try {
+        const history = await ltxDesktopCUDAEngine.getPerformanceHistory()
+        setPerformanceHistoryLength(history.length)
+      } catch (error) {
+        console.error("Failed to load performance history:", error)
+      }
+    }
+    loadPerformanceHistory()
+  }, [])
 
   // Initialize advanced timeline with all features enabled
   const timeline = useAdvancedTimeline({
@@ -270,7 +284,7 @@ export function AdvancedTimelineStudio() {
                 CUDA: {ltxDesktopCUDAEngine.getDevices().length} GPU{ltxDesktopCUDAEngine.getDevices().length !== 1 ? 's' : ''}
               </Badge>
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                {ltxDesktopCUDAEngine.getPerformanceHistory().length} Generations
+                {performanceHistoryLength} Generations
               </Badge>
             </div>
           </div>
