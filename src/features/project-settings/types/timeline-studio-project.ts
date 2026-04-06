@@ -4,6 +4,7 @@
  */
 
 import type { MediaPool, MediaPoolItem } from "@/features/media/types/media-pool"
+import type { AdvancedProjectResources, AdvancedTimelineProject } from "@/features/timeline/types/advanced-timeline"
 import type { Sequence } from "@/features/timeline/types/sequence"
 
 import type { ProjectSettings } from "./project"
@@ -180,9 +181,9 @@ export interface ProjectBackup {
 }
 
 /**
- * Основная структура проекта Timeline Studio
+ * Основная структура проекта Timeline Studio (расширенная)
  */
-export interface TimelineStudioProject {
+export interface TimelineStudioProject extends Partial<AdvancedTimelineProject> {
   /** Метаданные проекта */
   metadata: ProjectMetadata
 
@@ -207,6 +208,16 @@ export interface TimelineStudioProject {
 
     /** Пресеты экспорта */
     exportPresets: ExportPreset[]
+
+    /** Advanced timeline features */
+    advancedTimeline: {
+      enableSpeedRamping: boolean
+      enableColorGrading: boolean
+      enableMagneticSnapping: boolean
+      enablePrecisionTrimming: boolean
+      enableVirtualizedRendering: boolean
+      enableProgressiveLoading: boolean
+    }
   }
 
   /** Media Pool - централизованное хранилище медиа */
@@ -218,7 +229,7 @@ export interface TimelineStudioProject {
   /** ID активной секвенции */
   activeSequenceId: string
 
-  /** Кэш проекта */
+  /** Кэш проекта (расширенный) */
   cache: ProjectCache
 
   /** Настройки рабочего пространства */

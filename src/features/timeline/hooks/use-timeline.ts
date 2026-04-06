@@ -14,6 +14,13 @@ import {
   useTimelineTracks,
 } from "@/domains/video-editing"
 import { createLogger } from "@/lib/tauri-logger"
+import { magneticTimelineEngine } from "../hooks/use-magnetic-timeline"
+import { colorGradingEngine } from "../services/color-grading-integration"
+import { precisionTrimmingEngine } from "../services/precision-trimming"
+import { progressiveTimelineLoader } from "../services/progressive-loader"
+// Import advanced services
+import { speedRampingEngine } from "../services/speed-ramping-engine"
+import { virtualizedTimelineRenderer } from "../services/virtualized-renderer"
 
 const logger = createLogger("UseTimeline")
 
@@ -82,6 +89,30 @@ export interface TimelineContextType {
   updateMarker: ReturnType<typeof useTimelineMarkers>["updateMarker"]
   removeMarker: ReturnType<typeof useTimelineMarkers>["removeMarker"]
   goToMarker: ReturnType<typeof useTimelineMarkers>["goToMarker"]
+
+  // Advanced editing features
+  // Speed ramping
+  applySpeedRamping: (clipId: string, config: any) => Promise<void>
+  removeSpeedRamping: (clipId: string) => Promise<void>
+
+  // Color grading
+  applyColorGrading: (clipId: string, overrides: any) => Promise<void>
+  resetColorGrading: (clipId: string) => Promise<void>
+
+  // Precision trimming
+  trimClip: (operation: any) => Promise<{ result: any[]; valid: boolean; conflicts: string[] }>
+
+  // Magnetic timeline
+  enableSnapping: (enabled: boolean) => void
+  configureSnapping: (config: any) => void
+
+  // Virtualized rendering
+  updateVirtualWindow: (window: any) => void
+  getVisibleClips: () => any[]
+
+  // Progressive loading
+  preloadTimeRange: (start: number, end: number) => Promise<void>
+  getLoadingStats: () => any
 
   // Legacy методы для обратной совместимости
   addSection: (name: string, start: number, end: number) => Promise<void>

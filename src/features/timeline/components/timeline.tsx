@@ -5,7 +5,8 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { useUserSettings } from "@/features/app-state/hooks/use-user-settings"
 import { ResourcesPanel } from "@/features/resources"
 import { cn } from "@/lib/utils"
-
+// Import advanced virtualized content
+import { AdvancedVirtualizedTimelineContent } from "./advanced-virtualized-timeline"
 import { AudioMixerView } from "./audio-mixer-view"
 import { TimelineContent } from "./timeline-content"
 import { TimelineWorkspaceTabs, type WorkspaceView } from "./timeline-workspace-tabs"
@@ -27,7 +28,11 @@ export function Timeline({ className, style }: TimelineProps = {}) {
   const { userSettings } = useUserSettings()
 
   // Выбираем компонент Timeline в зависимости от настроек виртуализации
-  const TimelineComponent = userSettings?.timelineVirtualizationEnabled ? VirtualizedTimelineContent : TimelineContent
+  const TimelineComponent = userSettings?.timelineVirtualizationEnabled
+    ? userSettings?.advancedTimelineFeatures
+      ? AdvancedVirtualizedTimelineContent
+      : VirtualizedTimelineContent
+    : TimelineContent
 
   return (
     <ResizablePanelGroup

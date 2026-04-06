@@ -16,6 +16,7 @@ import type { StyleTemplate } from "../../style-templates/types/style-template"
 import type { SubtitleClip } from "../../subtitles/types"
 import type { MediaTemplate } from "../../templates/lib/template-config"
 import type { Transition } from "../../transitions/types/transitions"
+import type { AdvancedClip, AdvancedClipProperties, ColorOverrides } from "./advanced-clips"
 import type { SpeedRampingConfig } from "./speed-ramping"
 import type { TimelineTransition } from "./timeline-transition"
 
@@ -168,12 +169,12 @@ export interface TimelineTrack {
 }
 
 /**
- * Клип Timeline - отдельный медиа-элемент на треке
+ * Клип Timeline - отдельный медиа-элемент на треке (расширенная версия)
  */
-export interface TimelineClip {
+export interface TimelineClip extends Partial<AdvancedClip> {
   id: string
   name: string
-  type?: "video" | "audio" | "image" | "subtitle" | "title" // Тип клипа
+  type?: "video" | "audio" | "image" | "subtitle" | "title" | "compound" | "multicam" // Тип клипа (расширенный)
 
   // Связь с медиафайлом
   mediaId: string
@@ -238,6 +239,12 @@ export interface TimelineClip {
 
   // Keyframe анимации
   keyframes?: TimelineKeyframe[]
+
+  // Advanced properties (from AdvancedClipProperties)
+  advancedProperties?: AdvancedClipProperties
+
+  // Color grading overrides
+  colorOverrides?: ColorOverrides
 
   // Состояние
   isSelected: boolean

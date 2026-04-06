@@ -20,9 +20,13 @@ import { TimelineUIProvider, useTimelineUI } from "../context/timeline-ui-contex
 import { useClips } from "../hooks/use-clips"
 import { useDragDropTimeline } from "../hooks/use-drag-drop-timeline"
 import { EditModeProvider } from "../hooks/use-edit-mode"
+// Import advanced services
+import { magneticTimelineInteraction } from "../hooks/use-magnetic-timeline"
 import { useTimeline } from "../hooks/use-timeline"
 import { useTimelinePlayerSync } from "../hooks/use-timeline-player-sync"
 import { useTracks } from "../hooks/use-tracks"
+import { progressiveTimelineLoader } from "../services/progressive-loader"
+import { virtualizedTimelineRenderer } from "../services/virtualized-renderer"
 import { TimelineAIOverlay } from "./ai-analysis/timeline-ai-overlay"
 import { AIMarkerControls } from "./ai-markers/ai-marker-controls"
 import { DragDropProvider } from "./drag-drop-provider"
@@ -90,6 +94,33 @@ function TimelineContentInner() {
 
   // Инициализируем синхронизацию с плеером
   useTimelinePlayerSync()
+
+  // Initialize advanced services
+  useEffect(() => {
+    if (currentProject) {
+      // Initialize progressive loading for the current project
+      progressiveTimelineLoader.initializeProject(currentProject).catch((error) => {
+        logger.error("Failed to initialize progressive loading:", error)
+      })
+
+      // Configure virtualized rendering
+      virtualizedTimelineRenderer.configure({
+        bufferSize: 2,
+        maxConcurrentRenders: 3,
+        enableGPUAcceleration: true,
+      })
+
+      // Configure magnetic timeline
+      magneticTimelineEngine.configure({
+        snapThreshold: 0.1,
+        snapStrength: 0.8,
+        proximityRadius: 0.5,
+        showSnapLines: true,
+        snapToGrid: true,
+        gridSize: 1.0,
+      })
+    }
+  }, [currentProject])
 
   // Создаем проект немедленно при наличии currentProject
   useEffect(() => {
