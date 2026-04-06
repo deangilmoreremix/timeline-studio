@@ -1,6 +1,6 @@
 import { useUserSettings } from "@/features/user-settings"
 
-import { ChatLayout, DefaultLayout, OptionsLayout, VerticalLayout } from "./layouts-markup"
+import { ChatLayout, DefaultLayout, EditorLayout, OptionsLayout, VerticalLayout } from "./layouts-markup"
 
 export function LayoutPreviews() {
   const { layoutMode, handleLayoutChange } = useUserSettings()
@@ -32,6 +32,14 @@ export function LayoutPreviews() {
           isActive={layoutMode === "chat"}
           onClick={() => {
             handleLayoutChange("chat")
+          }}
+        />
+      </div>
+      <div className="flex justify-center">
+        <EditorLayout
+          isActive={layoutMode === "editor"}
+          onClick={() => {
+            handleLayoutChange("editor")
           }}
         />
       </div>

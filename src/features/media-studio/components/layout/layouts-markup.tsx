@@ -1,4 +1,4 @@
-import { MessageCircle, Play } from "lucide-react"
+import { Code, MessageCircle, MonitorSpeaker, Play } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 interface LayoutProps {
@@ -242,6 +242,50 @@ export function ChatLayout({ isActive, onClick }: LayoutProps) {
         </div>
       </div>
       <span className="text-[10px] font-medium">{t("topBar.layouts.chat")}</span>
+    </div>
+  )
+}
+
+export function EditorLayout({ isActive, onClick }: LayoutProps) {
+  const { t } = useTranslation()
+  return (
+    <div
+      className={`flex cursor-pointer flex-col items-center ${isActive ? "bg-muted/40" : "hover:bg-muted/40"} p-2 pb-1`}
+      onClick={onClick}
+    >
+      <div className="mb-1 flex h-24 w-40 flex-row border-2 border-gray-700">
+        {/* Navigation Sidebar */}
+        <div className="flex h-full w-[25%] flex-col border-r-2 border-gray-700">
+          <div className="flex h-[20%] items-center justify-center border-b-2 border-gray-700">
+            <Code className="h-2 w-2 text-primary" />
+          </div>
+          <div className="flex h-[20%] items-center justify-center border-b-2 border-gray-700">
+            <MonitorSpeaker className="h-2 w-2 text-primary" />
+          </div>
+          <div className="flex h-[20%] items-center justify-center border-b-2 border-gray-700">
+            <Play className="h-2 w-2 text-primary" />
+          </div>
+          <div className="flex h-[20%] items-center justify-center border-b-2 border-gray-700">
+            <MessageCircle className="h-2 w-2 text-primary" />
+          </div>
+          <div className="flex h-[20%] items-center justify-center">
+            <div className="h-1 w-1 rounded-full bg-primary" />
+          </div>
+        </div>
+
+        {/* Main Editor Area */}
+        <div className="flex h-full w-[75%] flex-col">
+          <div className="flex h-[60%] items-center justify-center border-b-2 border-gray-700">
+            <div className="bg-muted flex h-[90%] w-[95%] items-center justify-center border-2 border-gray-700">
+              <Code className="text-primary h-4 w-4" />
+            </div>
+          </div>
+          <div className="flex h-[40%] items-center justify-center">
+            <div className="text-[8px] text-primary font-bold">RENDIV</div>
+          </div>
+        </div>
+      </div>
+      <span className="text-[10px] font-medium">{t("topBar.layouts.editor")}</span>
     </div>
   )
 }

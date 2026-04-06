@@ -17,7 +17,7 @@ const logger = createLogger("UserSettingsMachine")
  * Допустимые значения для макета интерфейса
  * Определяют, как организованы элементы интерфейса
  */
-export const LAYOUTS = ["default", "options", "vertical", "chat"] as const
+export const LAYOUTS = ["default", "options", "vertical", "chat", "editor"] as const
 export const DEFAULT_LAYOUT = "default" // Макет по умолчанию
 
 /**

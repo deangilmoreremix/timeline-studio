@@ -153,6 +153,7 @@
       "options": "Options",
       "vertical": "Vertical",
       "chat": "Chat View",
+      "editor": "Editor Mode",
       "externalDisplayRequired": "External display required"
     }
   },

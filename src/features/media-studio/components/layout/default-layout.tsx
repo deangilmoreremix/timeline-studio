@@ -1,6 +1,7 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { AiChat } from "@/features/ai-chat/components/ai-chat"
 import { Browser } from "@/features/browser/components"
+import { MainEditorRouter } from "@/features/navigation/components/main-editor-router"
 import { Options } from "@/features/options"
 import { Timeline } from "@/features/timeline/components/timeline"
 import { useUserSettings } from "@/features/user-settings"
@@ -94,47 +95,24 @@ function TopDefaultLayout({ isOptionsVisible, isTimelineVisible: _, isBrowserVis
 }
 
 export function DefaultLayout() {
-  const { isTimelineVisible, isOptionsVisible, isBrowserVisible } = useUserSettings()
+  const { isOptionsVisible } = useUserSettings()
+  const { isBrowserVisible } = useUserSettings()
+  const { layoutMode } = useUserSettings()
 
-  return (
-    <ResizablePanelGroup direction="vertical" className="min-h-0 flex-grow" autoSaveId="default-layout-main">
-      <ResizablePanel defaultSize={50} minSize={20} maxSize={80}>
-        <TopDefaultLayout
-          isTimelineVisible={isTimelineVisible}
-          isOptionsVisible={isOptionsVisible}
-          isBrowserVisible={isBrowserVisible}
-        />
-      </ResizablePanel>
-      {isTimelineVisible ? (
-        <>
-          <ResizableHandle />
-          <ResizablePanel
-            defaultSize={20}
-            minSize={20}
-            maxSize={100}
-            style={{
-              transition: "width 0.3s ease-in-out",
-            }}
-          >
-            {/* Timeline и AI Chat рядом горизонтально */}
-            <ResizablePanelGroup direction="horizontal" className="min-h-0 h-full" autoSaveId="timeline-with-ai">
-              <ResizablePanel defaultSize={70} minSize={30} maxSize={80}>
-                <div className="h-full flex-1">
-                  <Timeline />
-                </div>
-              </ResizablePanel>
-              <ResizableHandle />
-              <ResizablePanel defaultSize={30} minSize={20} maxSize={70}>
-                <div className="h-full flex-1 flex flex-col">
-                  <div className="flex-1 min-h-0">
-                    <AiChat />
-                  </div>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </ResizablePanel>
-        </>
-      ) : null}
-    </ResizablePanelGroup>
-  )
-}
+  // Editor mode - use main navigation with editor router
+  if (layoutMode === "editor") {
+    return (
+      <div className="h-full">
+        <MainEditorRouter />
+      </div>
+    )
+  }
+
+  // All panels hidden - show only VideoPlayer
+  if (!isOptionsVisible && !isBrowserVisible) {
+    return (
+      <div className="h-full flex-1">
+        <VideoPlayer />
+      </div>
+    )
+  }

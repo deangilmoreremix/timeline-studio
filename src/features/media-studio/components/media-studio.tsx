@@ -37,6 +37,7 @@ export function MediaStudio() {
           {layoutMode === "options" && <OptionsLayout />}
           {layoutMode === "vertical" && <VerticalLayout />}
           {layoutMode === "chat" && <ChatLayout />}
+          {layoutMode === "editor" && <DefaultLayout />}
         </div>
 
         {/* Контейнер для модальных окон */}
