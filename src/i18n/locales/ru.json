@@ -1536,6 +1536,7 @@
       "audio": "Аудио",
       "color": "Цвет",
       "speed": "Скорость",
+      "rendiv": "Rendiv",
       "info": "Информация"
     },
     "video": {

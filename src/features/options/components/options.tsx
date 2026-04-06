@@ -1,4 +1,4 @@
-import { AudioLines, Gauge, Info, Palette } from "lucide-react"
+import { AudioLines, Code, Gauge, Info, Palette } from "lucide-react"
 import { type JSX, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -10,14 +10,16 @@ import { cn } from "@/lib/utils"
 
 import { AudioSettings } from "./audio-settings"
 import { InfoSettings } from "./info-settings"
+import { RendivEditor } from "./rendiv-editor"
 import { SpeedSettings } from "./speed-settings"
 
-type OptionsTab = "audio" | "color" | "speed" | "info"
+type OptionsTab = "audio" | "color" | "speed" | "info" | "rendiv"
 
 const TABS: Array<{ id: OptionsTab; labelKey: string; icon: JSX.Element }> = [
   { id: "color", labelKey: "options.tabs.color", icon: <Palette /> },
   { id: "speed", labelKey: "options.tabs.speed", icon: <Gauge /> },
   { id: "audio", labelKey: "options.tabs.audio", icon: <AudioLines /> },
+  { id: "rendiv", labelKey: "options.tabs.rendiv", icon: <Code /> },
   { id: "info", labelKey: "options.tabs.info", icon: <Info /> },
 ]
 
@@ -44,6 +46,8 @@ export function Options({ selectedMediaFile }: OptionsProps) {
         return <ColorSettings />
       case "speed":
         return <SpeedSettings />
+      case "rendiv":
+        return <RendivEditor />
       case "info":
         return <InfoSettings selectedMediaFile={selectedMediaFile} />
       default:

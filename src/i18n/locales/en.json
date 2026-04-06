@@ -2037,6 +2037,7 @@
       "audio": "Audio",
       "color": "Color",
       "speed": "Speed",
+      "rendiv": "Rendiv",
       "info": "Info"
     },
     "video": {

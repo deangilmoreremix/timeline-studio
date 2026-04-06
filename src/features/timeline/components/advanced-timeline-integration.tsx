@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RendivEditor } from "@/features/options/components/rendiv-editor"
 import { useAdvancedTimeline } from "../hooks/use-advanced-timeline"
 import { cineGenElementsEngine } from "../services/cinegen-elements-engine"
 import { ltxDesktopCUDAEngine } from "../services/ltx-desktop-cuda-engine"
@@ -28,7 +29,7 @@ import { Spaces } from "./spaces/spaces-canvas"
 export function AdvancedTimelineStudio() {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null)
   const [editMode, setEditMode] = useState<"select" | "trim" | "speed" | "color">("select")
-  const [activeView, setActiveView] = useState<"timeline" | "spaces" | "elements" | "render">("timeline")
+  const [activeView, setActiveView] = useState<"timeline" | "spaces" | "elements" | "render" | "rendiv">("timeline")
   const [showSpaces, setShowSpaces] = useState(false)
   const [performanceHistoryLength, setPerformanceHistoryLength] = useState(0)
 
@@ -276,6 +277,13 @@ export function AdvancedTimelineStudio() {
               onClick={() => setActiveView("render")}
             >
               Rendiv Render
+            </Button>
+            <Button
+              variant={activeView === "rendiv" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("rendiv")}
+            >
+              Rendiv Editor
             </Button>
 
             {/* LTX-Desktop CUDA Status */}
@@ -644,6 +652,13 @@ export function AdvancedTimelineStudio() {
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Rendiv Editor View */}
+      {activeView === "rendiv" && (
+        <div className="h-full">
+          <RendivEditor />
         </div>
       )}
     </div>
