@@ -36,6 +36,18 @@ export {
   progressiveDataStreamer,
   progressiveTimelineLoader,
 } from "./progressive-loader"
+// Repository integration services (CineGen, LTX-Desktop, Rendiv)
+export {
+  AIContentGenerationEngine,
+  AIGenerationModel,
+  aiContentGenerationEngine,
+  GPURenderingEngine,
+  gpuRenderingEngine,
+  MultiCameraEditingEngine,
+  multiCameraEditingEngine,
+  UnifiedProjectFormat,
+  unifiedProjectFormat,
+} from "./repository-integration-engine"
 // Speed ramping services
 export {
   audioStretchingProcessor,

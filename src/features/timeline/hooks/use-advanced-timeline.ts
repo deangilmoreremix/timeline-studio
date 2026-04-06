@@ -11,6 +11,12 @@ import { createLogger } from "@/lib/tauri-logger"
 import { colorGradingEngine } from "../services/color-grading-integration"
 import { precisionTrimmingEngine, trimHandleManager } from "../services/precision-trimming"
 import { progressiveTimelineLoader } from "../services/progressive-loader"
+import {
+  aiContentGenerationEngine,
+  gpuRenderingEngine,
+  multiCameraEditingEngine,
+  unifiedProjectFormat,
+} from "../services/repository-integration-engine"
 import { speedRampingEngine } from "../services/speed-ramping-engine"
 import { virtualizedTimelineRenderer } from "../services/virtualized-renderer"
 import { magneticTimelineEngine } from "./use-magnetic-timeline"
@@ -323,6 +329,14 @@ export function useAdvancedTimeline(
     getVisibleClips,
     preloadTimeRange,
     getLoadingStats,
+
+    // Repository integrations (CineGen, LTX-Desktop, Rendiv)
+    generateVideoFromText: aiContentGenerationEngine.generateFromText.bind(aiContentGenerationEngine),
+    generateFromImage: aiContentGenerationEngine.generateFromImage.bind(aiContentGenerationEngine),
+    createMultiCameraSequence: multiCameraEditingEngine.createMultiCameraSequence.bind(multiCameraEditingEngine),
+    renderWithGPU: gpuRenderingEngine.renderTimeline.bind(gpuRenderingEngine),
+    exportUnifiedProject: () => unifiedProjectFormat.exportUnifiedProject(baseTimeline.project),
+    importUnifiedProject: unifiedProjectFormat.importUnifiedProject.bind(unifiedProjectFormat),
 
     // Configuration
     advancedConfig: config,
