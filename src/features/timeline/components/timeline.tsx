@@ -6,7 +6,7 @@ import { useUserSettings } from "@/features/app-state/hooks/use-user-settings"
 import { ResourcesPanel } from "@/features/resources"
 import { cn } from "@/lib/utils"
 // Import advanced virtualized content
-import { AdvancedVirtualizedTimelineContent, AdvancedVirtualizedTimelineContent } from "./advanced-virtualized-timeline"
+import { AdvancedVirtualizedTimelineContent } from "./advanced-virtualized-timeline"
 import { AudioMixerView } from "./audio-mixer-view"
 import { TimelineContent } from "./timeline-content"
 import { TimelineWorkspaceTabs, type WorkspaceView } from "./timeline-workspace-tabs"

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 import { magneticTimelineInteraction } from "../hooks/use-magnetic-timeline"
 import { progressiveTimelineLoader } from "../services/progressive-loader"
 import { virtualizedTimelineRenderer } from "../services/virtualized-renderer"
-import { AdvancedTimelineErrorBoundary, AdvancedTimelineErrorBoundary } from "./advanced-timeline-error-boundary"
+import { AdvancedTimelineErrorBoundary } from "./advanced-timeline-error-boundary"
 
 const logger = createLogger("AdvancedVirtualizedTimelineContent")
 

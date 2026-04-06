@@ -6,22 +6,30 @@
  */
 
 import React, { useEffect, useState } from "react"
-
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAdvancedTimeline } from "../hooks/use-advanced-timeline"
+import { cineGenElementsEngine } from "../services/cinegen-elements-engine"
+import { ltxDesktopCUDAEngine } from "../services/ltx-desktop-cuda-engine"
+import { rendivVideoSystem } from "../services/rendiv-video-system"
 import {
   aiContentGenerationEngine,
   gpuRenderingEngine,
   multiCameraEditingEngine,
 } from "../services/repository-integration-engine"
+import { unifiedProjectManager } from "../services/unified-project-manager"
 import { AdvancedVirtualizedTimelineContent } from "./advanced-virtualized-timeline"
+// Import new integrated services
+import { Spaces } from "./spaces/spaces-canvas"
 
 // Example component showing full integration
 export function AdvancedTimelineStudio() {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null)
   const [editMode, setEditMode] = useState<"select" | "trim" | "speed" | "color">("select")
+  const [activeView, setActiveView] = useState<"timeline" | "spaces" | "elements" | "render">("timeline")
+  const [showSpaces, setShowSpaces] = useState(false)
 
   // Initialize advanced timeline with all features enabled
   const timeline = useAdvancedTimeline({
@@ -208,20 +216,73 @@ export function AdvancedTimelineStudio() {
       console.error("Failed to render with GPU:", error)
     }
   }
-}
 
-// Get performance metrics
-const loadingStats = timeline.getLoadingStats()
-const visibleClips = timeline.getVisibleClips()
+  // Get performance metrics
+  const loadingStats = timeline.getLoadingStats()
+  const visibleClips = timeline.getVisibleClips()
 
-return (
+  return (
     <div
       className="advanced-timeline-studio"
       style={{ width: "100%", height: "100vh", display: "flex", flexDirection: "column" }}
     >
-      {/* Toolbar with advanced controls */}
-      <div className="timeline-toolbar p-2.5 border-b border-border bg-muted/50">
-        <div className="flex gap-2.5 items-center">
+      {/* Integrated Features Toolbar */}
+      <div className="integrated-toolbar p-3 border-b border-border bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+        <div className="flex gap-3 items-center justify-between">
+          <div className="flex gap-2 items-center">
+            <h2 className="text-lg font-semibold text-primary">Timeline Studio Pro</h2>
+            <Badge variant="secondary" className="bg-green-100 text-green-800">All Features Integrated</Badge>
+          </div>
+
+          <div className="flex gap-2 items-center">
+            <Button
+              variant={activeView === "timeline" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("timeline")}
+            >
+              Timeline
+            </Button>
+            <Button
+              variant={activeView === "spaces" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("spaces")}
+            >
+              CineGen Spaces
+            </Button>
+            <Button
+              variant={activeView === "elements" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("elements")}
+            >
+              Elements
+            </Button>
+            <Button
+              variant={activeView === "render" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("render")}
+            >
+              Rendiv Render
+            </Button>
+
+            {/* LTX-Desktop CUDA Status */}
+            <div className="ml-4 flex items-center gap-2">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                CUDA: {ltxDesktopCUDAEngine.getDevices().length} GPU{ltxDesktopCUDAEngine.getDevices().length !== 1 ? 's' : ''}
+              </Badge>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                {ltxDesktopCUDAEngine.getPerformanceHistory().length} Generations
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      {activeView === "timeline" && (
+        <>
+          {/* Toolbar with advanced controls */}
+          <div className="timeline-toolbar p-2.5 border-b border-border bg-muted/50">
+            <div className="flex gap-2.5 items-center">
           {/* Edit mode selector */}
           <Select value={editMode} onValueChange={(value) => setEditMode(value as any)}>
             <SelectTrigger className="w-40">
@@ -305,12 +366,7 @@ return (
             Multi-Camera (LTX)
           </Button>
 
-          <Button
-            onClick={handleGPURender}
-            variant="default"
-            size="sm"
-            className="bg-pink-600 hover:bg-pink-700"
-          >
+          <Button onClick={handleGPURender} variant="default" size="sm" className="bg-pink-600 hover:bg-pink-700">
             GPU Render (Rendiv)
           </Button>
         </div>
@@ -352,9 +408,15 @@ return (
           <div>✂️ Precision Trim: {timeline.advancedState.trimmingActive ? "ON" : "OFF"}</div>
           <div>🚀 Virtual Render: {timeline.advancedConfig.enableVirtualizedRendering ? "ON" : "OFF"}</div>
           <div>📦 Progressive Load: {timeline.advancedConfig.enableProgressiveLoading ? "ON" : "OFF"}</div>
-          <div>🤖 AI Generation: <span className="text-blue-500">ON</span></div>
-          <div>📹 Multi-Camera: <span className="text-blue-500">ON</span></div>
-          <div>🎬 GPU Rendering: <span className="text-blue-500">ON</span></div>
+          <div>
+            🤖 AI Generation: <span className="text-blue-500">ON</span>
+          </div>
+          <div>
+            📹 Multi-Camera: <span className="text-blue-500">ON</span>
+          </div>
+          <div>
+            🎬 GPU Rendering: <span className="text-blue-500">ON</span>
+          </div>
         </div>
       </div>
 
@@ -486,6 +548,88 @@ return (
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* CineGen Spaces View */}
+      {activeView === "spaces" && (
+        <div className="flex-1">
+          <Spaces
+            className="h-full"
+            onWorkflowExecute={(nodes, edges) => {
+              console.log("Workflow executed from Spaces:", { nodes, edges })
+              // Here you could integrate with timeline to add generated clips
+            }}
+          />
+        </div>
+      )}
+
+      {/* Elements View */}
+      {activeView === "elements" && (
+        <div className="flex-1 p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>CineGen Elements - AI Consistency System</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cineGenElementsEngine.getAllElements().map(element => (
+                  <Card key={element.id} className="p-4">
+                    <h3 className="font-medium">{element.name}</h3>
+                    <p className="text-sm text-muted-foreground">{element.description}</p>
+                    <Badge variant="outline" className="mt-2">{element.type}</Badge>
+                  </Card>
+                ))}
+              </div>
+              {cineGenElementsEngine.getAllElements().length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  No elements created yet. Use CineGen Spaces to generate content with elements.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Rendiv Render View */}
+      {activeView === "render" && (
+        <div className="flex-1 p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Rendiv - React Component Video System</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {rendivVideoSystem.getRenderJobs().map(job => (
+                  <Card key={job.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium">{job.component.name}</h3>
+                        <p className="text-sm text-muted-foreground">{job.status}</p>
+                      </div>
+                      <Badge variant={job.status === 'completed' ? 'default' : 'secondary'}>
+                        {job.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${job.progress}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{job.progress}% complete</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              {rendivVideoSystem.getRenderJobs().length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  No render jobs. Create components in CineGen Spaces to start rendering.
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

@@ -35,6 +35,9 @@ import { PromptNode } from "./nodes/prompt-node"
 import { ShotBoardNode } from "./nodes/shot-board-node"
 import { StoryboarderNode } from "./nodes/storyboarder-node"
 
+// Import workflow engine
+import { spacesWorkflowEngine, type WorkflowContext } from "./workflow-engine"
+
 // Node types mapping
 const nodeTypes = {
   aiModel: AIModelNode,
@@ -82,6 +85,8 @@ export function Spaces({ className, onWorkflowExecute }: SpacesProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNodeType, setSelectedNodeType] = useState<string>("aiModel")
+  const [workflowContext, setWorkflowContext] = useState<WorkflowContext | null>(null)
+  const [isExecuting, setIsExecuting] = useState(false)
 
   // Add new node to canvas
   const addNode = useCallback(() => {
@@ -102,12 +107,34 @@ export function Spaces({ className, onWorkflowExecute }: SpacesProps) {
   const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), [setEdges])
 
   // Execute workflow
-  const executeWorkflow = useCallback(() => {
-    if (onWorkflowExecute) {
-      onWorkflowExecute(nodes, edges)
+  const executeWorkflow = useCallback(async () => {
+    if (isExecuting) return
+
+    setIsExecuting(true)
+    setWorkflowContext(null)
+
+    try {
+      const context = await spacesWorkflowEngine.executeWorkflow(nodes, edges)
+      setWorkflowContext(context)
+
+      if (onWorkflowExecute) {
+        onWorkflowExecute(nodes, edges)
+      }
+
+      console.log("Workflow execution completed:", context)
+    } catch (error) {
+      console.error("Workflow execution failed:", error)
+      setWorkflowContext({
+        inputs: new Map(),
+        outputs: new Map(),
+        errors: new Map([["workflow", error instanceof Error ? error.message : "Unknown error"]]),
+        status: "error",
+        progress: 0,
+      })
+    } finally {
+      setIsExecuting(false)
     }
-    console.log("Executing workflow:", { nodes, edges })
-  }, [nodes, edges, onWorkflowExecute])
+  }, [nodes, edges, onWorkflowExecute, isExecuting])
 
   // Get default data for node type
   const getDefaultNodeData = (type: string) => {
@@ -174,8 +201,8 @@ export function Spaces({ className, onWorkflowExecute }: SpacesProps) {
         <div className="flex-1" />
 
         <div className="flex items-center gap-2">
-          <Button onClick={executeWorkflow} variant="default">
-            Execute Workflow
+          <Button onClick={executeWorkflow} variant="default" disabled={isExecuting}>
+            {isExecuting ? "Executing..." : "Execute Workflow"}
           </Button>
           <Button variant="outline" size="sm">
             Save Workflow
@@ -183,6 +210,25 @@ export function Spaces({ className, onWorkflowExecute }: SpacesProps) {
           <Button variant="outline" size="sm">
             Load Workflow
           </Button>
+          {workflowContext && (
+            <div className="flex items-center gap-2 text-sm">
+              <span>Status:</span>
+              <span
+                className={`px-2 py-1 rounded text-xs ${
+                  workflowContext.status === "completed"
+                    ? "bg-green-100 text-green-800"
+                    : workflowContext.status === "error"
+                      ? "bg-red-100 text-red-800"
+                      : workflowContext.status === "running"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {workflowContext.status}
+              </span>
+              {workflowContext.progress > 0 && <span>{Math.round(workflowContext.progress)}%</span>}
+            </div>
+          )}
         </div>
       </div>
 
