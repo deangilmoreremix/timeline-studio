@@ -20,3 +20,6 @@ export type { TrackType } from "./timeline"
 // Export utility functions from timeline module
 export { isSubtitleClip } from "./timeline"
 export * from "./timeline-transition"
+
+// UI Component Types
+export * from "./ui-components"
