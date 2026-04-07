@@ -10,7 +10,15 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "studio": "next dev",
+    "render": "node src/cli/codevideo-cli.js render",
+    "enhance": "node src/cli/codevideo-cli.js enhance",
+    "suggest": "node src/cli/codevideo-cli.js suggest",
+    "templates": "node src/cli/codevideo-cli.js templates"
+  },
+  "bin": {
+    "codevideo": "./src/cli/codevideo-cli.js"
   },
   "dependencies": {
     "next": "^14.0.4",
@@ -24,7 +32,8 @@
     "lucide-react": "^0.294.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.0.0",
-    "class-variance-authority": "^0.7.0"
+    "class-variance-authority": "^0.7.0",
+    "commander": "^11.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
