@@ -24,7 +24,7 @@ import { unifiedProjectManager } from "../services/unified-project-manager"
 import { AdvancedVirtualizedTimelineContent } from "./advanced-virtualized-timeline"
 import { CollaborationPanel } from "./collaboration-panel"
 import { EnhancedTimeline } from "./enhanced-timeline"
-import { PluginManager, PluginManager } from "./plugin-manager"
+import { PluginManager } from "./plugin-manager"
 import { ProfessionalAudioMixer } from "./professional-audio-mixer"
 // Import new integrated services
 import { Spaces } from "./spaces/spaces-canvas"
