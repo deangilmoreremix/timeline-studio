@@ -22,6 +22,10 @@ import {
 } from "../services/repository-integration-engine"
 import { unifiedProjectManager } from "../services/unified-project-manager"
 import { AdvancedVirtualizedTimelineContent } from "./advanced-virtualized-timeline"
+import { CollaborationPanel } from "./collaboration-panel"
+import { EnhancedTimeline } from "./enhanced-timeline"
+import { PluginManager, PluginManager } from "./plugin-manager"
+import { ProfessionalAudioMixer } from "./professional-audio-mixer"
 // Import new integrated services
 import { Spaces } from "./spaces/spaces-canvas"
 
@@ -29,7 +33,7 @@ import { Spaces } from "./spaces/spaces-canvas"
 export function AdvancedTimelineStudio() {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null)
   const [editMode, setEditMode] = useState<"select" | "trim" | "speed" | "color">("select")
-  const [activeView, setActiveView] = useState<"timeline" | "spaces" | "elements" | "render" | "rendiv">("timeline")
+  const [activeView, setActiveView] = useState<"timeline" | "spaces" | "elements" | "render" | "rendiv" | "enhanced" | "audio-mixer" | "plugins" | "collaboration">("timeline")
   const [showSpaces, setShowSpaces] = useState(false)
   const [performanceHistoryLength, setPerformanceHistoryLength] = useState(0)
 
@@ -256,6 +260,34 @@ export function AdvancedTimelineStudio() {
               onClick={() => setActiveView("timeline")}
             >
               Timeline
+            </Button>
+            <Button
+              variant={activeView === "enhanced" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("enhanced")}
+            >
+              Multi-Track
+            </Button>
+            <Button
+              variant={activeView === "audio-mixer" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("audio-mixer")}
+            >
+              Audio Mixer
+            </Button>
+            <Button
+              variant={activeView === "plugins" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("plugins")}
+            >
+              Plugins
+            </Button>
+            <Button
+              variant={activeView === "collaboration" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView("collaboration")}
+            >
+              Collaborate
             </Button>
             <Button
               variant={activeView === "spaces" ? "default" : "outline"}
@@ -570,6 +602,41 @@ export function AdvancedTimelineStudio() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Enhanced Multi-Track Timeline View */}
+      {activeView === "enhanced" && (
+        <div className="flex-1">
+          <EnhancedTimeline />
+        </div>
+      )}
+
+      {/* Professional Audio Mixer View */}
+      {activeView === "audio-mixer" && (
+        <div className="flex-1">
+          <ProfessionalAudioMixer />
+        </div>
+      )}
+
+      {/* Plugin Manager View */}
+      {activeView === "plugins" && (
+        <div className="flex-1">
+          <PluginManager />
+        </div>
+      )}
+
+      {/* Collaboration Panel View */}
+      {activeView === "collaboration" && (
+        <div className="flex-1">
+          <CollaborationPanel
+            currentUser={{
+              id: 'user_1',
+              name: 'You',
+              color: '#3b82f6',
+              permissions: ['read', 'write']
+            }}
+          />
         </div>
       )}
 

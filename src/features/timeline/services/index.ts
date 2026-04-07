@@ -13,13 +13,43 @@ export {
   magneticTimelineEngine,
   magneticTimelineInteraction,
 } from "../hooks/use-magnetic-timeline"
-
+// Audio processing services
+export {
+  type AudioAutomation,
+  type AudioBus,
+  type AudioEffect,
+  type AudioSend,
+  type AudioSession,
+  type AudioTrack,
+  audioProcessingEngine,
+  type ProcessingResult,
+} from "./audio-processing-engine"
+// Collaboration services
+export {
+  type CollaborationEvent,
+  type CollaborationSession,
+  type Conflict,
+  collaborationEngine,
+  type Operation,
+  type OperationType,
+  type User,
+  type UserPermission,
+} from "./collaboration-engine"
 // Color grading services
 export {
   ColorGradingEngine,
   colorGradingEngine,
   colorGradingShaderManager,
 } from "./color-grading-integration"
+// Plugin system services
+export {
+  type PluginContext,
+  type PluginInstance,
+  type PluginManifest,
+  type PluginPermission,
+  type PluginType,
+  pluginSystem,
+} from "./plugin-system"
 // Precision trimming services
 export {
   PrecisionTrimmingEngine,
