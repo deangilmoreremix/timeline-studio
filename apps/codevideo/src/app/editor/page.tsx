@@ -6,7 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import { Play, Square, RotateCcw, Code, Eye, Settings, Zap, Brain } from 'lucide-react'
+import { Play, Square, RotateCcw, Code, Eye, Settings, Zap, Brain, Wand2, Lightbulb } from 'lucide-react'
+
+// Import our services
+import { videoRenderer, type RenderConfig, type RenderProgress } from '@/features/renderer/services/video-renderer'
+import { aiAssistant, type AIRequest } from '@/features/ai-assistant/services/ai-assistant'
 
 export default function EditorPage() {
   const [code, setCode] = useState(`// Welcome to CodeVideo!
@@ -38,6 +42,11 @@ export const MyVideo = () => {
   const [renderProgress, setRenderProgress] = useState(0)
   const [activeTab, setActiveTab] = useState('code')
 
+  // AI functionality state
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
+  const [isAiLoading, setIsAiLoading] = useState(false)
+  const [renderResult, setRenderResult] = useState<any>(null)
+
   const handleRender = () => {
     setIsRendering(true)
     setRenderProgress(0)
@@ -58,6 +67,89 @@ export const MyVideo = () => {
   const handleStop = () => {
     setIsRendering(false)
     setRenderProgress(0)
+  }
+
+  const handleEnhanceWithAI = async () => {
+    if (!claudeApiKey) {
+      alert('Please set your Claude API key in Settings')
+      return
+    }
+
+    setIsAiLoading(true)
+    aiAssistant.setApiKey(claudeApiKey)
+
+    try {
+      const enhancement = await aiAssistant.enhanceCode(
+        code,
+        'Add more visual effects and improve the animation'
+      )
+      setCode(enhancement.enhancedCode)
+      alert(`Code enhanced! ${enhancement.explanation}`)
+    } catch (error) {
+      alert('AI enhancement failed: ' + (error as Error).message)
+    } finally {
+      setIsAiLoading(false)
+    }
+  }
+
+  const handleGetSuggestions = async () => {
+    if (!claudeApiKey) {
+      alert('Please set your Claude API key in Settings')
+      return
+    }
+
+    setIsAiLoading(true)
+    aiAssistant.setApiKey(claudeApiKey)
+
+    try {
+      const suggestions = await aiAssistant.getSuggestions(code)
+      setAiSuggestions(suggestions)
+    } catch (error) {
+      alert('Failed to get suggestions: ' + (error as Error).message)
+    } finally {
+      setIsAiLoading(false)
+    }
+  }
+
+  const handleRealRender = async () => {
+    setIsRendering(true)
+    setRenderProgress(0)
+    setRenderResult(null)
+
+    try {
+      const config: RenderConfig = {
+        code,
+        duration: muapiConfig.duration,
+        resolution: muapiConfig.resolution,
+        quality: muapiConfig.quality,
+        format: 'mp4',
+        apiKey: 'demo-api-key', // In real app, get from settings
+        endpoint: 'https://api.muapi.com' // In real app, get from settings
+      }
+
+      const renderId = `render_${Date.now()}`
+
+      // Set up progress monitoring
+      videoRenderer.onProgress(renderId, (progress: RenderProgress) => {
+        setRenderProgress(progress.progress)
+      })
+
+      const result = await videoRenderer.renderVideo(config)
+      setRenderResult(result)
+
+      if (result.success) {
+        alert(`Video rendered successfully! URL: ${result.videoUrl}`)
+      } else {
+        alert(`Render failed: ${result.error}`)
+      }
+
+    } catch (error) {
+      alert('Render failed: ' + (error as Error).message)
+      setRenderResult({ success: false, error: (error as Error).message })
+    } finally {
+      setIsRendering(false)
+      setRenderProgress(0)
+    }
   }
 
   const handleReset = () => {
@@ -136,7 +228,7 @@ export const MyVideo = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Button
-                      onClick={handleRender}
+                      onClick={handleRealRender}
                       disabled={isRendering}
                       className="bg-green-600 hover:bg-green-700"
                     >
@@ -167,8 +259,26 @@ export const MyVideo = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleEnhanceWithAI}
+                      disabled={isAiLoading}
+                    >
+                      <Wand2 className="w-4 h-4 mr-1" />
+                      Enhance
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleGetSuggestions}
+                      disabled={isAiLoading}
+                    >
+                      <Lightbulb className="w-4 h-4 mr-1" />
+                      Suggestions
+                    </Button>
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      <Zap className="w-3 h-3 mr-1" />
+                      <Brain className="w-3 h-3 mr-1" />
                       Claude AI
                     </Badge>
                   </div>
@@ -187,6 +297,23 @@ export const MyVideo = () => {
                         style={{ width: `${renderProgress}%` }}
                       ></div>
                     </div>
+                  </div>
+                )}
+
+                {/* AI Suggestions */}
+                {aiSuggestions.length > 0 && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                      AI Suggestions:
+                    </h4>
+                    <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                      {aiSuggestions.map((suggestion, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{suggestion}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
@@ -220,29 +347,121 @@ export const MyVideo = () => {
 
             {/* Preview Tab */}
             <TabsContent value="preview" className="p-6">
-              <div className="text-center py-12">
-                <Eye className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Video Preview
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  Render your code to see the video preview here
-                </p>
-                {!isRendering && renderProgress === 0 && (
-                  <Button onClick={handleRender} className="bg-blue-600 hover:bg-blue-700">
-                    <Play className="w-4 h-4 mr-2" />
-                    Render Preview
-                  </Button>
+              <div className="space-y-6">
+                <div className="text-center">
+                  <Eye className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Video Preview & Results
+                  </h3>
+                </div>
+
+                {/* Render Results */}
+                {renderResult && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        {renderResult.success ? (
+                          <Badge className="bg-green-100 text-green-800">Success</Badge>
+                        ) : (
+                          <Badge variant="destructive">Failed</Badge>
+                        )}
+                        Render Result
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderResult.success ? (
+                        <div className="space-y-4">
+                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                            <h4 className="font-medium mb-2">Video Details:</h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-500">Duration:</span>
+                                <span className="ml-2 font-medium">{renderResult.duration}s</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Resolution:</span>
+                                <span className="ml-2 font-medium">{renderResult.resolution}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">File Size:</span>
+                                <span className="ml-2 font-medium">
+                                  {renderResult.fileSize ?
+                                    `${(renderResult.fileSize / 1024 / 1024).toFixed(1)} MB` :
+                                    'N/A'
+                                  }
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Video URL:</span>
+                                <a
+                                  href={renderResult.videoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="ml-2 text-blue-600 hover:underline"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+
+                          {renderResult.thumbnailUrl && (
+                            <div>
+                              <h4 className="font-medium mb-2">Thumbnail:</h4>
+                              <img
+                                src={renderResult.thumbnailUrl}
+                                alt="Video thumbnail"
+                                className="max-w-xs rounded-lg border"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                          <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">
+                            Render Failed
+                          </h4>
+                          <p className="text-red-700 dark:text-red-300">
+                            {renderResult.error || 'Unknown error occurred'}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 )}
-                {renderProgress === 100 && (
-                  <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-6">
-                    <div className="text-green-800 dark:text-green-200">
-                      ✅ Video rendered successfully!
-                    </div>
-                    <div className="mt-2 text-sm text-green-600 dark:text-green-300">
-                      Download link and preview would appear here
-                    </div>
+
+                {/* No Results State */}
+                {!renderResult && !isRendering && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">
+                      No renders yet. Write code and click "Render Video" to create your first video!
+                    </p>
                   </div>
+                )}
+
+                {/* Rendering State */}
+                {isRendering && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
+                          <Play className="w-8 h-8 text-blue-600 animate-pulse" />
+                        </div>
+                        <h3 className="text-lg font-medium mb-2">Rendering Video...</h3>
+                        <p className="text-gray-500 mb-4">This may take a few minutes</p>
+
+                        <div className="max-w-xs mx-auto">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${renderProgress}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-sm text-gray-500">{renderProgress}% complete</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             </TabsContent>
